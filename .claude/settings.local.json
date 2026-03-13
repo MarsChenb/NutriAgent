@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(pip install:*)",
+      "Bash(timeout 5)",
+      "Bash(curl -s http://localhost:8000/health)"
+    ]
+  }
+}
