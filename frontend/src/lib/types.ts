@@ -48,6 +48,23 @@ export interface ExerciseLog {
   created_at: string;
 }
 
+export interface WeeklyReviewDay {
+  summary_date: string;
+  total_calories_kcal: number;
+  total_exercise_calories_kcal: number;
+  calorie_deficit_kcal: number;
+  weight_kg: number | null;
+  status: string;
+}
+
+export interface WeeklyReview {
+  week_start: string;
+  week_end: string;
+  daily_items: WeeklyReviewDay[];
+  weekly_summary_ai: string;
+  weight_change_kg: number | null;
+}
+
 export interface ParsedFood {
   food_name: string;
   amount_g: number;

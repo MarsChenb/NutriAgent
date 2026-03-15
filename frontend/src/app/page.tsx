@@ -262,9 +262,14 @@ export default function DashboardPage() {
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">{coach.name}</h1>
             <p className="mt-2 max-w-[14rem] text-sm/6 text-white/90">{coach.tagline}</p>
           </div>
-          <button onClick={() => router.push("/onboarding")} className="rounded-full border border-white/35 px-3 py-1 text-xs text-white/90">
-            编辑建档
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => router.push("/review")} className="rounded-full border border-white/35 px-3 py-1 text-xs text-white/90">
+              周复盘
+            </button>
+            <button onClick={() => router.push("/onboarding")} className="rounded-full border border-white/35 px-3 py-1 text-xs text-white/90">
+              编辑建档
+            </button>
+          </div>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">

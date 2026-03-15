@@ -193,9 +193,14 @@ export default function ChatPage() {
             <h1 className="text-lg font-semibold">{coach.name} AI 私教</h1>
             <p className="text-sm text-slate-500">已注入用户画像、今日预算、最近餐食和运动记录</p>
           </div>
-          <button onClick={() => router.push("/onboarding")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-600">
-            编辑建档
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => router.push("/review")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-600">
+              周复盘
+            </button>
+            <button onClick={() => router.push("/onboarding")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-600">
+              编辑建档
+            </button>
+          </div>
         </div>
       </div>
 
@@ -218,7 +223,12 @@ export default function ChatPage() {
         )}
 
         <div className="mt-4 rounded-[28px] border border-white/70 bg-white/92 p-4 shadow-sm">
-          <div className="text-sm font-medium text-slate-900">快捷任务</div>
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-medium text-slate-900">快捷任务</div>
+            <button onClick={() => router.push("/review")} className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600">
+              查看周复盘
+            </button>
+          </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
             {quickTasks.map((task) => (
               <button
