@@ -6,7 +6,7 @@ import { zhCN } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { getCoachPersona } from "@/lib/coach-personas";
-import type { DailySummary, MealLog, UserProfile } from "@/lib/types";
+import type { DailySummary, ExerciseLog, MealLog, UserProfile } from "@/lib/types";
 
 type MealSectionKey = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -23,8 +23,19 @@ const mealSections: MealSectionConfig[] = [
   { key: "lunch", title: "午餐", emoji: "午", targetRatio: 0.35, cta: "记午餐" },
   { key: "dinner", title: "晚餐", emoji: "晚", targetRatio: 0.3, cta: "记晚餐" },
   { key: "snack", title: "加餐", emoji: "加", targetRatio: 0.1, cta: "记加餐" },
-  { key: "exercise", title: "运动", emoji: "动", cta: "去记录" },
+  { key: "exercise", title: "运动", emoji: "动", cta: "记运动" },
 ];
+
+const exerciseTypeLabels: Record<string, string> = {
+  walking: "步行",
+  running: "跑步",
+  cycling: "骑行",
+  strength: "力量训练",
+  hiit: "HIIT",
+  yoga: "瑜伽拉伸",
+  swimming: "游泳",
+  other: "其他运动",
+};
 
 function buildWeekDays(selectedDate: Date) {
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
@@ -146,6 +157,7 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [meals, setMeals] = useState<MealLog[]>([]);
+  const [exercises, setExercises] = useState<ExerciseLog[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(readDateFromLocation);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -173,14 +185,16 @@ export default function DashboardPage() {
         return;
       }
 
-      const [summaryRes, mealsRes] = await Promise.all([
+      const [summaryRes, mealsRes, exercisesRes] = await Promise.all([
         api.get<DailySummary>("/meals/daily-summary", { params: { summary_date: dateString } }),
         api.get<MealLog[]>("/meals/", { params: { meal_date: dateString } }),
+        api.get<ExerciseLog[]>("/exercises/", { params: { exercise_date: dateString } }),
       ]);
 
       setProfile(profileRes.data);
       setSummary(summaryRes.data);
       setMeals(mealsRes.data);
+      setExercises(exercisesRes.data);
     } catch (loadError) {
       console.error(loadError);
       setError("首页数据加载失败，请确认后端服务可用。");
@@ -199,6 +213,14 @@ export default function DashboardPage() {
       params.set("prefill", quickInput.trim());
     }
     router.push(`/meals?${params.toString()}`);
+  }
+
+  function goToExerciseRecorder() {
+    const params = new URLSearchParams({ date: format(selectedDate, "yyyy-MM-dd") });
+    if (quickInput.trim()) {
+      params.set("prefill", quickInput.trim());
+    }
+    router.push(`/exercise?${params.toString()}`);
   }
 
   const weekDays = useMemo(() => buildWeekDays(selectedDate), [selectedDate]);
@@ -226,8 +248,9 @@ export default function DashboardPage() {
   const coach = getCoachPersona(profile.coach_persona);
   const calorieTarget = summary.calorie_target || profile.daily_calorie_target || 2000;
   const consumedCalories = summary.total_calories_kcal || 0;
-  const burnedCalories = 0;
-  const remainingCalories = Math.max(0, Math.round((summary.calorie_remaining_kcal ?? calorieTarget - consumedCalories) + burnedCalories));
+  const burnedCalories = summary.total_exercise_calories_kcal || 0;
+  const remainingCalories = Math.max(0, Math.round(summary.calorie_remaining_kcal ?? calorieTarget - consumedCalories + burnedCalories));
+  const calorieDeficit = Math.round(summary.calorie_deficit_kcal ?? calorieTarget + burnedCalories - consumedCalories);
   const weeklyGoalKg = getWeeklyGoalKg(profile);
 
   return (
@@ -288,19 +311,23 @@ export default function DashboardPage() {
           <div>
             <p className="text-sm text-slate-500">今日热量预算</p>
             <h3 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">还可摄入 {remainingCalories} kcal</h3>
-            <p className="mt-2 text-sm text-slate-500">饮食摄入 {Math.round(consumedCalories)} kcal · 运动消耗 {burnedCalories} kcal</p>
+            <p className="mt-2 text-sm text-slate-500">饮食摄入 {Math.round(consumedCalories)} kcal · 运动消耗 {Math.round(burnedCalories)} kcal</p>
           </div>
-          <SummaryDonut consumed={consumedCalories} target={calorieTarget} />
+          <SummaryDonut consumed={consumedCalories} target={calorieTarget + burnedCalories} />
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="mt-5 grid grid-cols-3 gap-3">
           <div className="rounded-2xl bg-slate-50 p-4">
-            <div className="text-xs text-slate-500">热量缺口 / 剩余</div>
-            <div className="mt-2 text-2xl font-semibold text-slate-950">{remainingCalories} kcal</div>
+            <div className="text-xs text-slate-500">热量缺口</div>
+            <div className="mt-2 text-2xl font-semibold text-slate-950">{calorieDeficit} kcal</div>
           </div>
           <div className="rounded-2xl bg-slate-50 p-4">
             <div className="text-xs text-slate-500">饮食摄入</div>
             <div className="mt-2 text-2xl font-semibold text-slate-950">{Math.round(consumedCalories)} kcal</div>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <div className="text-xs text-slate-500">运动消耗</div>
+            <div className="mt-2 text-2xl font-semibold text-slate-950">{Math.round(burnedCalories)} kcal</div>
           </div>
         </div>
 
@@ -321,16 +348,32 @@ export default function DashboardPage() {
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-sm font-semibold text-slate-700">{section.emoji}</div>
                     <div>
                       <h4 className="text-lg font-semibold text-slate-950">{section.title}</h4>
-                      <p className="text-sm text-slate-500">{burnedCalories} / 0 kcal</p>
+                      <p className="text-sm text-slate-500">{Math.round(burnedCalories)} kcal · {summary.exercise_count} 条记录</p>
                     </div>
                   </div>
-                  <button onClick={() => router.push("/chat")} className="rounded-full bg-slate-950 px-4 py-2 text-xs text-white">
+                  <button onClick={goToExerciseRecorder} className="rounded-full bg-slate-950 px-4 py-2 text-xs text-white">
                     {section.cta}
                   </button>
                 </div>
-                <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
-                  运动记录模块将在下一步接入。当前先保留入口，后续会在这里展示手动运动记录和消耗热量。
-                </div>
+                {exercises.length === 0 ? (
+                  <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                    今天还没有运动记录。补一条训练数据后，首页会自动重算热量缺口。
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    {exercises.map((exercise) => (
+                      <div key={exercise.id} className="rounded-2xl bg-slate-50 p-4">
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="font-medium text-slate-800">{exerciseTypeLabels[exercise.exercise_type] || exercise.exercise_type}</div>
+                          <div className="font-semibold text-emerald-600">{Math.round(exercise.calories_burned_kcal)} kcal</div>
+                        </div>
+                        <div className="mt-2 text-xs text-slate-500">{format(new Date(exercise.created_at), "HH:mm")} · {exercise.duration_minutes} 分钟</div>
+                        {exercise.notes && <div className="mt-2 text-sm text-slate-600">备注：{exercise.notes}</div>}
+                        {exercise.ai_summary && <div className="mt-3 rounded-2xl bg-white px-3 py-3 text-sm leading-6 text-slate-600">{exercise.ai_summary}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           }

@@ -3,6 +3,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.exercise import ExerciseLog
 from app.models.food import FoodItem, FoodNutrition
 from app.models.meal import DailyNutritionSummary, MealLog, MealLogItem
 from app.models.user import UserProfile
@@ -87,9 +88,7 @@ async def create_meal(
         food_id = item["food_id"]
         amount_g = item["amount_g"]
 
-        result = await db.execute(
-            select(FoodNutrition).where(FoodNutrition.food_id == food_id)
-        )
+        result = await db.execute(select(FoodNutrition).where(FoodNutrition.food_id == food_id))
         nutr = result.scalar_one_or_none()
 
         cal = float(nutr.calories_kcal or 0) * amount_g / 100 if nutr else 0
@@ -125,11 +124,7 @@ async def create_meal(
 
     profile_result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
     profile = profile_result.scalar_one_or_none()
-    calorie_target = (
-        int(profile.daily_calorie_target)
-        if profile and profile.daily_calorie_target
-        else 2000
-    )
+    calorie_target = int(profile.daily_calorie_target) if profile and profile.daily_calorie_target else 2000
     meal_log.ai_summary = build_meal_ai_summary(
         meal_type=meal_type,
         total_cal=total_cal,
@@ -146,7 +141,7 @@ async def create_meal(
 
 
 async def update_daily_summary(db: AsyncSession, user_id: int, summary_date: date):
-    result = await db.execute(
+    meal_result = await db.execute(
         select(
             func.sum(MealLog.total_calories_kcal),
             func.sum(MealLog.total_protein_g),
@@ -155,19 +150,28 @@ async def update_daily_summary(db: AsyncSession, user_id: int, summary_date: dat
             func.count(MealLog.id),
         ).where(MealLog.user_id == user_id, MealLog.meal_date == summary_date)
     )
-    row = result.first()
-    total_cal = float(row[0] or 0)
-    total_protein = float(row[1] or 0)
-    total_fat = float(row[2] or 0)
-    total_carb = float(row[3] or 0)
-    meals_count = row[4] or 0
+    meal_row = meal_result.first()
+    total_cal = float(meal_row[0] or 0)
+    total_protein = float(meal_row[1] or 0)
+    total_fat = float(meal_row[2] or 0)
+    total_carb = float(meal_row[3] or 0)
+    meals_count = meal_row[4] or 0
 
-    profile_result = await db.execute(
-        select(UserProfile).where(UserProfile.user_id == user_id)
+    exercise_result = await db.execute(
+        select(
+            func.sum(ExerciseLog.calories_burned_kcal),
+            func.count(ExerciseLog.id),
+        ).where(ExerciseLog.user_id == user_id, ExerciseLog.exercise_date == summary_date)
     )
+    exercise_row = exercise_result.first()
+    total_exercise_calories = float(exercise_row[0] or 0)
+    exercise_count = exercise_row[1] or 0
+
+    profile_result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
     profile = profile_result.scalar_one_or_none()
-    calorie_target = profile.daily_calorie_target if profile else 2000
-    remaining = (calorie_target or 2000) - total_cal
+    calorie_target = int(profile.daily_calorie_target) if profile and profile.daily_calorie_target else 2000
+    calorie_remaining = calorie_target - total_cal + total_exercise_calories
+    calorie_deficit = calorie_target + total_exercise_calories - total_cal
 
     summary_result = await db.execute(
         select(DailyNutritionSummary).where(
@@ -185,7 +189,10 @@ async def update_daily_summary(db: AsyncSession, user_id: int, summary_date: dat
     summary.total_fat_g = round(total_fat, 2)
     summary.total_carb_g = round(total_carb, 2)
     summary.meals_count = meals_count
-    summary.calorie_remaining_kcal = round(remaining, 2)
+    summary.total_exercise_calories_kcal = round(total_exercise_calories, 2)
+    summary.exercise_count = exercise_count
+    summary.calorie_remaining_kcal = round(calorie_remaining, 2)
+    summary.calorie_deficit_kcal = round(calorie_deficit, 2)
 
 
 async def get_daily_summary(db: AsyncSession, user_id: int, summary_date: date) -> dict:
@@ -197,11 +204,9 @@ async def get_daily_summary(db: AsyncSession, user_id: int, summary_date: date) 
     )
     summary = result.scalar_one_or_none()
 
-    profile_result = await db.execute(
-        select(UserProfile).where(UserProfile.user_id == user_id)
-    )
+    profile_result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
     profile = profile_result.scalar_one_or_none()
-    calorie_target = profile.daily_calorie_target if profile else 2000
+    calorie_target = int(profile.daily_calorie_target) if profile and profile.daily_calorie_target else 2000
 
     if summary:
         return {
@@ -211,8 +216,11 @@ async def get_daily_summary(db: AsyncSession, user_id: int, summary_date: date) 
             "total_fat_g": float(summary.total_fat_g or 0),
             "total_carb_g": float(summary.total_carb_g or 0),
             "meals_count": summary.meals_count or 0,
+            "total_exercise_calories_kcal": float(summary.total_exercise_calories_kcal or 0),
+            "exercise_count": summary.exercise_count or 0,
             "calorie_target": calorie_target,
             "calorie_remaining_kcal": float(summary.calorie_remaining_kcal or 0),
+            "calorie_deficit_kcal": float(summary.calorie_deficit_kcal or 0),
         }
 
     return {
@@ -222,6 +230,9 @@ async def get_daily_summary(db: AsyncSession, user_id: int, summary_date: date) 
         "total_fat_g": 0,
         "total_carb_g": 0,
         "meals_count": 0,
+        "total_exercise_calories_kcal": 0,
+        "exercise_count": 0,
         "calorie_target": calorie_target,
-        "calorie_remaining_kcal": float(calorie_target or 2000),
+        "calorie_remaining_kcal": float(calorie_target),
+        "calorie_deficit_kcal": float(calorie_target),
     }

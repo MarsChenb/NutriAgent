@@ -1,4 +1,4 @@
-from datetime import date, datetime
+﻿from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -78,5 +78,8 @@ class DailySummaryResponse(BaseModel):
     total_fat_g: float
     total_carb_g: float
     meals_count: int
+    total_exercise_calories_kcal: float = 0
+    exercise_count: int = 0
     calorie_target: int | None = None
     calorie_remaining_kcal: float | None = None
+    calorie_deficit_kcal: float | None = None

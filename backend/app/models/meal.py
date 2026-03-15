@@ -1,4 +1,4 @@
-from datetime import date, datetime
+﻿from datetime import date, datetime
 
 from sqlalchemy import BigInteger, Date, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -11,9 +11,9 @@ class MealLog(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    meal_type: Mapped[str | None] = mapped_column(String(32))  # breakfast/lunch/dinner/snack
+    meal_type: Mapped[str | None] = mapped_column(String(32))
     meal_date: Mapped[date] = mapped_column(Date, nullable=False)
-    input_mode: Mapped[str | None] = mapped_column(String(32))  # text/image/manual
+    input_mode: Mapped[str | None] = mapped_column(String(32))
     raw_input: Mapped[str | None] = mapped_column(Text)
     total_calories_kcal: Mapped[float | None] = mapped_column(Numeric(8, 2))
     total_protein_g: Mapped[float | None] = mapped_column(Numeric(8, 2))
@@ -50,5 +50,8 @@ class DailyNutritionSummary(Base):
     total_fat_g: Mapped[float | None] = mapped_column(Numeric(8, 2))
     total_carb_g: Mapped[float | None] = mapped_column(Numeric(8, 2))
     meals_count: Mapped[int] = mapped_column(Integer, default=0)
+    total_exercise_calories_kcal: Mapped[float | None] = mapped_column(Numeric(8, 2))
+    exercise_count: Mapped[int] = mapped_column(Integer, default=0)
     calorie_remaining_kcal: Mapped[float | None] = mapped_column(Numeric(8, 2))
+    calorie_deficit_kcal: Mapped[float | None] = mapped_column(Numeric(8, 2))
     created_at: Mapped[datetime] = mapped_column(default=func.now())

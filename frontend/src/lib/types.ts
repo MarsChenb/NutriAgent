@@ -1,12 +1,15 @@
-export interface DailySummary {
+﻿export interface DailySummary {
   summary_date: string;
   total_calories_kcal: number;
   total_protein_g: number;
   total_fat_g: number;
   total_carb_g: number;
   meals_count: number;
+  total_exercise_calories_kcal: number;
+  exercise_count: number;
   calorie_target: number | null;
   calorie_remaining_kcal: number | null;
+  calorie_deficit_kcal: number | null;
 }
 
 export interface MealItem {
@@ -32,6 +35,17 @@ export interface MealLog {
   ai_summary: string | null;
   created_at: string;
   items: MealItem[];
+}
+
+export interface ExerciseLog {
+  id: number;
+  exercise_type: string;
+  exercise_date: string;
+  duration_minutes: number;
+  calories_burned_kcal: number;
+  notes: string | null;
+  ai_summary: string | null;
+  created_at: string;
 }
 
 export interface ParsedFood {
