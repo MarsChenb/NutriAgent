@@ -1,4 +1,4 @@
-export type CoachPersona = {
+﻿export type CoachPersona = {
   id: string;
   name: string;
   mbti: string;
@@ -15,18 +15,18 @@ export const coachPersonas: CoachPersona[] = [
     name: "Mira",
     mbti: "INTP",
     tagline: "拆解目标，给你清晰的执行路径",
-    style: "理性分析型",
-    greeting: "我是 Mira，会把你的目标拆成可执行的小步骤。",
+    style: "理性拆解型",
+    greeting: "我是 Mira，我会把你的目标拆成可执行的小步骤。",
     accentClass: "text-violet-700",
     gradientClass: "from-violet-500 via-fuchsia-500 to-pink-400",
   },
   {
     id: "jun",
-    name: "阿峻",
+    name: "阿郁",
     mbti: "ENFJ",
     tagline: "陪你稳定坚持，不靠意志力硬扛",
     style: "陪伴鼓励型",
-    greeting: "我是阿峻，我会盯住节奏和情绪波动，陪你稳稳往前走。",
+    greeting: "我是阿郁，我会盯住你的节奏和情绪波动，陪你稳稳往前走。",
     accentClass: "text-emerald-700",
     gradientClass: "from-emerald-500 via-teal-500 to-cyan-400",
   },
@@ -34,9 +34,9 @@ export const coachPersonas: CoachPersona[] = [
     id: "nova",
     name: "Nova",
     mbti: "ENTJ",
-    tagline: "直给反馈，帮你把执行力拉满",
-    style: "强推动员型",
-    greeting: "我是 Nova，我会直接告诉你今天该做什么，别拖。",
+    tagline: "直接给反馈，帮你把执行力拉满",
+    style: "直接推进型",
+    greeting: "我是 Nova，我会直接告诉你现在最值得做什么。",
     accentClass: "text-amber-700",
     gradientClass: "from-orange-500 via-amber-500 to-yellow-400",
   },
