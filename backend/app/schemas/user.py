@@ -31,10 +31,17 @@ class UserResponse(BaseModel):
 
 
 class UserProfileUpdate(BaseModel):
+    coach_persona: str | None = None
+    goal_type: str | None = None
+    gender: str | None = None
+    age: int | None = None
+    height_cm: float | None = None
     current_weight_kg: float | None = None
     target_weight_kg: float | None = None
-    goal_type: str | None = None
+    body_shape: str | None = None
     activity_level: str | None = None
+    medical_history: str | None = None
+    onboarding_completed: bool | None = None
     daily_calorie_target: int | None = None
     protein_target_g: float | None = None
     fat_target_g: float | None = None
@@ -46,10 +53,17 @@ class UserProfileUpdate(BaseModel):
 
 class UserProfileResponse(BaseModel):
     user_id: int
+    coach_persona: str | None
+    goal_type: str | None
+    gender: str | None
+    age: int | None
+    height_cm: float | None
     current_weight_kg: float | None
     target_weight_kg: float | None
-    goal_type: str | None
+    body_shape: str | None
     activity_level: str | None
+    medical_history: str | None
+    onboarding_completed: bool
     daily_calorie_target: int | None
     protein_target_g: float | None
     fat_target_g: float | None
@@ -57,5 +71,7 @@ class UserProfileResponse(BaseModel):
     taste_preference: str | None
     allergies: str | None
     dietary_restrictions: str | None
+    bmi: float | None
+    weight_delta_kg: float | None
 
     model_config = {"from_attributes": True}

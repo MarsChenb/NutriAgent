@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import BigInteger, Date, Numeric, String, Text, func
+from sqlalchemy import BigInteger, Boolean, Date, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models import Base
@@ -25,10 +25,15 @@ class UserProfile(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
+    coach_persona: Mapped[str | None] = mapped_column(String(32))
+    age: Mapped[int | None] = mapped_column(Integer)
     current_weight_kg: Mapped[float | None] = mapped_column(Numeric(6, 2))
     target_weight_kg: Mapped[float | None] = mapped_column(Numeric(6, 2))
-    goal_type: Mapped[str | None] = mapped_column(String(32))  # 减脂/增肌/维持/控糖
-    activity_level: Mapped[str | None] = mapped_column(String(32))  # 久坐/轻活动/中活动/高活动
+    goal_type: Mapped[str | None] = mapped_column(String(32))
+    body_shape: Mapped[str | None] = mapped_column(String(32))
+    activity_level: Mapped[str | None] = mapped_column(String(32))
+    medical_history: Mapped[str | None] = mapped_column(Text)
+    onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     daily_calorie_target: Mapped[int | None] = mapped_column()
     protein_target_g: Mapped[float | None] = mapped_column(Numeric(6, 2))
     fat_target_g: Mapped[float | None] = mapped_column(Numeric(6, 2))

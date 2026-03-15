@@ -2,15 +2,28 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.api.v1.router import api_router
+from app.models import Base
+
+
+async def ensure_runtime_schema(app: FastAPI):
+    from app.db import engine
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS coach_persona VARCHAR(32)"))
+        await conn.execute(text("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS age INTEGER"))
+        await conn.execute(text("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS body_shape VARCHAR(32)"))
+        await conn.execute(text("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS medical_history TEXT"))
+        await conn.execute(text("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT FALSE"))
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    await ensure_runtime_schema(app)
     yield
-    # Shutdown
     from app.db import engine
     await engine.dispose()
 

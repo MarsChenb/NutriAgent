@@ -49,3 +49,27 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
 }
+
+export interface UserProfile {
+  user_id: number;
+  coach_persona: string | null;
+  goal_type: string | null;
+  gender: string | null;
+  age: number | null;
+  height_cm: number | null;
+  current_weight_kg: number | null;
+  target_weight_kg: number | null;
+  body_shape: string | null;
+  activity_level: string | null;
+  medical_history: string | null;
+  onboarding_completed: boolean;
+  daily_calorie_target: number | null;
+  protein_target_g: number | null;
+  fat_target_g: number | null;
+  carb_target_g: number | null;
+  taste_preference: string | null;
+  allergies: string | null;
+  dietary_restrictions: string | null;
+  bmi: number | null;
+  weight_delta_kg: number | null;
+}

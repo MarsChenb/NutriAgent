@@ -52,6 +52,7 @@ async def ensure_default_user(db: AsyncSession) -> User:
         profile = UserProfile(
             user_id=user.id,
             daily_calorie_target=DEFAULT_DAILY_CALORIE_TARGET,
+            onboarding_completed=False,
         )
         db.add(profile)
 
