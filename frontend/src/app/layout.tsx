@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 import BottomNav from "@/components/bottom-nav";
 
@@ -14,8 +14,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className="min-h-screen bg-[radial-gradient(circle_at_top,_#eef4ff,_#f7f8fc_45%,_#eef2f7)] text-slate-900 antialiased">
-        <div className="relative mx-auto min-h-screen max-w-5xl overflow-hidden bg-white/78 pb-16 shadow-[0_24px_90px_rgba(15,23,42,0.12)] backdrop-blur md:my-6 md:min-h-[calc(100vh-3rem)] md:rounded-[36px]">
+      <body className="min-h-screen text-slate-900 antialiased">
+        <div className="relative mx-auto min-h-screen max-w-6xl overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.92))] pb-20 shadow-[0_32px_120px_rgba(15,23,42,0.14)] backdrop-blur md:my-5 md:min-h-[calc(100vh-2.5rem)] md:rounded-[40px] md:border md:border-white/60">
           {children}
           <BottomNav />
         </div>
@@ -23,3 +23,4 @@ export default function RootLayout({
     </html>
   );
 }
+

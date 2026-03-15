@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,22 +36,27 @@ export default function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-50 flex w-full max-w-5xl -translate-x-1/2 justify-around border-t border-white/60 bg-white/90 py-2 backdrop-blur md:rounded-b-[36px]">
-      {navItems.map((item) => {
-        const active = pathname === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex min-w-[64px] flex-col items-center text-xs transition ${active ? "text-slate-950" : "text-slate-500 hover:text-slate-900"}`}
-          >
-            <svg className="mb-1 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {item.icon}
-            </svg>
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
+    <nav className="fixed bottom-3 left-1/2 z-50 w-[calc(100%-1.25rem)] max-w-xl -translate-x-1/2 rounded-[28px] border border-white/70 bg-white/88 px-2 py-2 shadow-[0_18px_36px_rgba(15,23,42,0.14)] backdrop-blur md:bottom-6">
+      <div className="flex items-center justify-between gap-1">
+        {navItems.map((item) => {
+          const active = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex min-w-[64px] flex-1 items-center justify-center gap-2 rounded-[20px] px-2 py-2 text-xs transition ${
+                active ? "bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.22)]" : "text-slate-500 hover:bg-slate-100/90 hover:text-slate-900"
+              }`}
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {item.icon}
+              </svg>
+              <span className="hidden sm:inline">{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }
+
