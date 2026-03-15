@@ -10,10 +10,11 @@ class MealItemInput(BaseModel):
 
 
 class MealCreateRequest(BaseModel):
-    meal_type: str  # breakfast/lunch/dinner/snack
+    meal_type: str
     meal_date: date | None = None
     items: list[MealItemInput]
     raw_input: str | None = None
+    input_mode: str | None = None
 
 
 class MealParseRequest(BaseModel):

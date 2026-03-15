@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { addDays, format, parseISO, startOfWeek } from "date-fns";
@@ -23,7 +23,7 @@ const mealSections: MealSectionConfig[] = [
   { key: "lunch", title: "午餐", emoji: "午", targetRatio: 0.35, cta: "记午餐" },
   { key: "dinner", title: "晚餐", emoji: "晚", targetRatio: 0.3, cta: "记晚餐" },
   { key: "snack", title: "加餐", emoji: "加", targetRatio: 0.1, cta: "记加餐" },
-  { key: "exercise", title: "运动", emoji: "动", cta: "记运动" },
+  { key: "exercise", title: "运动", emoji: "动", cta: "去记录" },
 ];
 
 function buildWeekDays(selectedDate: Date) {
@@ -126,6 +126,21 @@ function readDateFromLocation() {
   return value ? parseISO(value) : new Date();
 }
 
+function goalLabel(goalType: string | null) {
+  switch (goalType) {
+    case "fat_loss":
+      return "减脂塑形";
+    case "health":
+      return "更健康";
+    case "energy":
+      return "更有活力";
+    case "detox":
+      return "饮食重置";
+    default:
+      return "未设定目标";
+  }
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -174,6 +189,18 @@ export default function DashboardPage() {
     }
   }
 
+  function goToMealRecorder(mealType: MealSectionKey = "lunch", mode: "text" | "image" = "text") {
+    const params = new URLSearchParams({
+      mealType,
+      date: format(selectedDate, "yyyy-MM-dd"),
+      mode,
+    });
+    if (quickInput.trim()) {
+      params.set("prefill", quickInput.trim());
+    }
+    router.push(`/meals?${params.toString()}`);
+  }
+
   const weekDays = useMemo(() => buildWeekDays(selectedDate), [selectedDate]);
   const groupedMeals = useMemo(() => groupMealsByType(meals), [meals]);
 
@@ -220,7 +247,7 @@ export default function DashboardPage() {
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-white/15 p-4 backdrop-blur">
             <div className="text-xs text-white/70">本周目标</div>
-            <div className="mt-2 text-xl font-semibold">减 {weeklyGoalKg.toFixed(2)} kg</div>
+            <div className="mt-2 text-xl font-semibold">瘦 {weeklyGoalKg.toFixed(2)} kg</div>
           </div>
           <div className="rounded-2xl bg-white/15 p-4 backdrop-blur">
             <div className="text-xs text-white/70">今日状态</div>
@@ -329,7 +356,7 @@ export default function DashboardPage() {
 
               {sectionMeals.length === 0 ? (
                 <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
-                  这餐还没有记录。点击右上角开始补记，系统会自动更新今日热量和营养进度。
+                  这餐还没有记录。点击右上角开始补录，系统会自动更新今日热量和营养进度。
                 </div>
               ) : (
                 <div className="mt-4 space-y-3">
@@ -340,6 +367,7 @@ export default function DashboardPage() {
                         <div className="font-semibold text-orange-500">{Math.round(meal.total_calories_kcal || 0)} kcal</div>
                       </div>
                       <div className="mt-2 text-xs text-slate-500">{format(new Date(meal.created_at), "HH:mm")} · {meal.items.length} 个食物项</div>
+                      {meal.ai_summary && <div className="mt-3 rounded-2xl bg-white px-3 py-3 text-sm leading-6 text-slate-600">{meal.ai_summary}</div>}
                     </div>
                   ))}
                 </div>
@@ -355,36 +383,21 @@ export default function DashboardPage() {
             <input
               value={quickInput}
               onChange={(event) => setQuickInput(event.target.value)}
-              placeholder="快速记录一句，例如：晚餐吃了鸡胸肉和沙拉"
+              placeholder="快速记一口，例如：晚餐吃了鸡胸肉和沙拉"
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
-            <button onClick={() => router.push("/meals")} className="rounded-full border border-slate-200 px-3 py-2 text-xs text-slate-600">
+            <button onClick={() => goToMealRecorder("lunch", "text")} className="rounded-full border border-slate-200 px-3 py-2 text-xs text-slate-600">
               文本
             </button>
-            <button onClick={() => router.push("/meals")} className="rounded-full border border-slate-200 px-3 py-2 text-xs text-slate-600">
+            <button onClick={() => goToMealRecorder("lunch", "image")} className="rounded-full border border-slate-200 px-3 py-2 text-xs text-slate-600">
               相机
             </button>
             <button onClick={() => router.push("/chat")} className="rounded-full bg-slate-950 px-3 py-2 text-xs text-white">
-              AI助教
+              AI 助教
             </button>
           </div>
         </div>
       </section>
     </div>
   );
-}
-
-function goalLabel(goalType: string | null) {
-  switch (goalType) {
-    case "fat_loss":
-      return "减脂塑形";
-    case "health":
-      return "更健康";
-    case "energy":
-      return "更有活力";
-    case "detox":
-      return "饮食重置";
-    default:
-      return "未设定目标";
-  }
 }

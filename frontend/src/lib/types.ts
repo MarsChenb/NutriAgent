@@ -44,6 +44,15 @@ export interface ParsedFood {
   carb_g: number | null;
 }
 
+export interface MealParseResult {
+  items: ParsedFood[];
+  total_calories_kcal: number;
+  total_protein_g: number;
+  total_fat_g: number;
+  total_carb_g: number;
+  error?: string;
+}
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;

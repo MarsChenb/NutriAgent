@@ -1,11 +1,62 @@
-from datetime import date
+﻿from datetime import date
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.food import FoodItem, FoodNutrition
 from app.models.meal import DailyNutritionSummary, MealLog, MealLogItem
 from app.models.user import UserProfile
+
+MEAL_TARGET_RATIOS = {
+    "breakfast": 0.25,
+    "lunch": 0.35,
+    "dinner": 0.30,
+    "snack": 0.10,
+}
+
+
+def build_meal_ai_summary(
+    meal_type: str,
+    total_cal: float,
+    total_protein: float,
+    total_fat: float,
+    total_carb: float,
+    calorie_target: int | None,
+) -> str:
+    target = calorie_target or 2000
+    meal_target = max(120, round(target * MEAL_TARGET_RATIOS.get(meal_type, 0.2)))
+
+    if total_cal > meal_target * 1.15:
+        calorie_comment = "这顿热量偏高，后面一餐建议收一点。"
+    elif total_cal >= meal_target * 0.75:
+        calorie_comment = "这顿热量控制得不错。"
+    else:
+        calorie_comment = "这顿热量偏低，注意别因为吃太少影响饱腹感。"
+
+    if total_protein >= 20:
+        protein_comment = "蛋白质达标，饱腹感和恢复都会更稳。"
+    else:
+        protein_comment = "蛋白质偏少，下一餐可以补鸡胸肉、鸡蛋或豆制品。"
+
+    fat_comment = (
+        "脂肪略高，烹调油和高脂配菜要留意。"
+        if total_fat >= 20
+        else "脂肪压力不大。"
+    )
+    carb_comment = (
+        "碳水稍多，后续主食可以适当减一点。"
+        if total_carb >= 60
+        else "碳水整体在可控范围内。"
+    )
+
+    next_step = {
+        "breakfast": "午餐优先补蛋白和蔬菜，别再靠精制主食堆饱。",
+        "lunch": "晚餐尽量清爽一点，把蛋白质补足就够了。",
+        "dinner": "今晚后续如果还饿，优先选酸奶、牛奶或水果，不要再加高油宵夜。",
+        "snack": "把加餐控制在计划内，后面的正餐继续按节奏吃。",
+    }.get(meal_type, "继续按今天的热量预算往下走。")
+
+    return f"{calorie_comment}{protein_comment}{fat_comment}{carb_comment}{next_step}"
 
 
 async def create_meal(
@@ -17,7 +68,6 @@ async def create_meal(
     input_mode: str = "manual",
     raw_input: str | None = None,
 ) -> MealLog:
-    """Create a meal log with items and calculate nutrition."""
     total_cal = 0.0
     total_protein = 0.0
     total_fat = 0.0
@@ -37,7 +87,6 @@ async def create_meal(
         food_id = item["food_id"]
         amount_g = item["amount_g"]
 
-        # Look up nutrition per 100g
         result = await db.execute(
             select(FoodNutrition).where(FoodNutrition.food_id == food_id)
         )
@@ -48,7 +97,6 @@ async def create_meal(
         fat = float(nutr.fat_g or 0) * amount_g / 100 if nutr else 0
         carb = float(nutr.carb_g or 0) * amount_g / 100 if nutr else 0
 
-        # Get food name
         food_result = await db.execute(select(FoodItem).where(FoodItem.id == food_id))
         food = food_result.scalar_one_or_none()
 
@@ -75,7 +123,22 @@ async def create_meal(
     meal_log.total_fat_g = round(total_fat, 2)
     meal_log.total_carb_g = round(total_carb, 2)
 
-    # Update daily summary
+    profile_result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
+    profile = profile_result.scalar_one_or_none()
+    calorie_target = (
+        int(profile.daily_calorie_target)
+        if profile and profile.daily_calorie_target
+        else 2000
+    )
+    meal_log.ai_summary = build_meal_ai_summary(
+        meal_type=meal_type,
+        total_cal=total_cal,
+        total_protein=total_protein,
+        total_fat=total_fat,
+        total_carb=total_carb,
+        calorie_target=calorie_target,
+    )
+
     await update_daily_summary(db, user_id, meal_date)
 
     await db.commit()
@@ -83,7 +146,6 @@ async def create_meal(
 
 
 async def update_daily_summary(db: AsyncSession, user_id: int, summary_date: date):
-    """Recalculate daily nutrition summary."""
     result = await db.execute(
         select(
             func.sum(MealLog.total_calories_kcal),
@@ -100,7 +162,6 @@ async def update_daily_summary(db: AsyncSession, user_id: int, summary_date: dat
     total_carb = float(row[3] or 0)
     meals_count = row[4] or 0
 
-    # Get user calorie target
     profile_result = await db.execute(
         select(UserProfile).where(UserProfile.user_id == user_id)
     )
@@ -108,7 +169,6 @@ async def update_daily_summary(db: AsyncSession, user_id: int, summary_date: dat
     calorie_target = profile.daily_calorie_target if profile else 2000
     remaining = (calorie_target or 2000) - total_cal
 
-    # Upsert daily summary
     summary_result = await db.execute(
         select(DailyNutritionSummary).where(
             DailyNutritionSummary.user_id == user_id,
@@ -129,7 +189,6 @@ async def update_daily_summary(db: AsyncSession, user_id: int, summary_date: dat
 
 
 async def get_daily_summary(db: AsyncSession, user_id: int, summary_date: date) -> dict:
-    """Get daily nutrition summary."""
     result = await db.execute(
         select(DailyNutritionSummary).where(
             DailyNutritionSummary.user_id == user_id,
