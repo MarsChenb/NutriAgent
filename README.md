@@ -1,169 +1,151 @@
-# NutriAgent — AI 智能营养管理系统
+﻿# NutriAgent - AI 健康教练 Web 应用
 
-基于 Multi-Agent 架构与 RAG 的智能饮食管理系统，实现 **记录饮食 → 识别食物 → 估算热量 → 分析营养 → 个性化建议 → 长期追踪** 的完整闭环。
+NutriAgent 是一个面向减脂与健康管理场景的单用户 AI 应用项目。它把竞品中的核心闭环拆成一个更适合 Web 演示和面试表达的版本：`首次建档 -> 每日执行 -> AI 私教 -> 周度复盘`。
+
+项目定位不是商业化 SaaS，而是一个可完整演示的 AI 应用作品，重点体现：
+- 多模态餐食记录
+- 个性化健康画像
+- AI 私教任务型交互
+- 饮食 + 运动能量平衡计算
+- 周度复盘与 AI 总结
+
+## 适合演示的核心功能
+
+### 1. 首次建档与教练人格选择
+- 选择 3 位不同风格的 AI 教练
+- 分 9 步采集个人画像：目标、性别、年龄、身高、当前体重、目标体重、体型、运动习惯、疾病史
+- 实时计算 BMI 与目标减重差值
+
+### 2. 今日健康工作台
+- 按日期查看每日饮食与运动数据
+- 展示热量预算、饮食摄入、运动消耗、热量缺口
+- 按早餐 / 午餐 / 晚餐 / 加餐 / 运动组织当天记录
+
+### 3. 多模态餐食记录
+- 支持文本描述解析
+- 支持图片上传识别
+- 解析后展示食物项、克数、总热量、三大营养素
+- 保存后生成 AI 简评并回流首页展示
+
+### 4. 运动记录与能量平衡
+- 手动记录运动类型、时长、消耗热量、备注
+- 自动汇总到每日热量缺口
+- 保存后生成 AI 运动点评
+
+### 5. AI 私教工具台
+- 保留自由聊天
+- 提供快捷任务：查食物热量、推荐饮食、训练后怎么吃、今天还能吃什么
+- 注入用户画像、今日预算、最近餐食与最近运动作为上下文
+- 回答风格随教练人格变化
+
+### 6. 周度复盘页
+- 展示最近 7 天饮食摄入、运动消耗、热量缺口、体重变化
+- 每日标记执行状态：达标 / 未达标 / 数据不足
+- 页面顶部生成 AI 周总结，输出本周表现、问题与下周建议
+
+## 项目截图建议
+
+如果你准备录屏或写作品集，建议截这 5 类页面：
+1. 教练选择 + 9 步建档
+2. 今日健康工作台首页
+3. 餐食识别结果页
+4. AI 私教工具台
+5. 周度复盘页
 
 ## 技术亮点
 
-- **Multi-Agent 编排**：Router Agent 自动分流到 食物解析 / 营养查询 / 知识问答 / 食谱推荐 等子 Agent
-- **RAG 营养知识库**：基于 pgvector 向量检索，结合《中国居民膳食指南》等权威知识回答营养问题
-- **Text2SQL**：自然语言查询饮食记录和营养数据
-- **食物识别**：文字描述解析 + 图片识别（多模态）
-- **个性化推荐**：结合用户画像、当日摄入量、健康目标进行食谱推荐
-
-## 技术栈
-
-| 层 | 技术 |
-|---|---|
-| LLM | DeepSeek API（OpenAI 兼容接口） |
-| 后端 | FastAPI + SQLAlchemy 2.0 (async) + Alembic |
-| Agent | LangGraph 状态机 + 多 Agent 协作 |
-| 向量库 | PostgreSQL + pgvector |
-| 缓存 | Redis |
-| 前端 | Next.js 14 + TypeScript + Tailwind CSS |
-| 基础设施 | Docker Compose |
+- 前端：Next.js App Router + TypeScript + Tailwind CSS
+- 后端：FastAPI + SQLAlchemy Async
+- 大模型接入：DeepSeek OpenAI 兼容接口
+- AI 交互：任务型路由 + Persona Prompt + Context Engineering
+- 数据层：餐食、运动、日汇总、体重记录四类核心实体联动
 
 ## 项目结构
 
-```
+```text
 NutriAgent/
-├── docker-compose.yml          # PostgreSQL (pgvector) + Redis
 ├── backend/
 │   ├── app/
-│   │   ├── main.py             # FastAPI 入口
-│   │   ├── config.py           # 配置管理
-│   │   ├── api/v1/             # REST API 端点
-│   │   │   ├── auth.py         # JWT 认证
-│   │   │   ├── meals.py        # 饮食记录 CRUD + AI 解析
-│   │   │   ├── chat.py         # AI 对话（统一入口）
-│   │   │   ├── foods.py        # 食物库搜索
-│   │   │   └── health.py       # 体重记录
-│   │   ├── agents/             # Multi-Agent 系统
-│   │   │   ├── graph.py        # Agent 编排主流程
-│   │   │   ├── router_agent.py # 意图分类
-│   │   │   ├── food_parser.py  # LLM 食物解析
-│   │   │   ├── sql_agent.py    # 数据库查询
-│   │   │   ├── nutrition_agent.py  # 营养分析
-│   │   │   ├── recipe_agent.py # 食谱推荐
-│   │   │   └── rag_agent.py    # RAG 问答
-│   │   ├── rag/                # RAG 管线
-│   │   │   ├── embeddings.py   # Embedding 生成
-│   │   │   ├── ingestion.py    # 文档切块 + 向量化
-│   │   │   └── retriever.py    # 向量检索
-│   │   ├── models/             # ORM 模型
-│   │   ├── schemas/            # Pydantic 校验
-│   │   ├── services/           # 业务逻辑
+│   │   ├── agents/             # 私教对话路由、Prompt、上下文组装
+│   │   ├── api/v1/             # meals / exercises / health / chat 等接口
+│   │   ├── models/             # 用户、餐食、运动、体重、日汇总模型
+│   │   ├── schemas/            # Pydantic 请求与响应模型
+│   │   ├── services/           # 餐食汇总、运动汇总等业务逻辑
+│   │   ├── rag/                # RAG 检索与知识导入
 │   │   └── vision/             # 图片食物识别
-│   └── seeds/                  # 种子数据
-│       ├── chinese_foods.json  # 51 种中国常见食物
-│       └── knowledge/          # RAG 知识文档
-├── frontend/
-│   └── src/app/
-│       ├── page.tsx            # Dashboard（热量环形图）
-│       ├── meals/page.tsx      # 饮食记录
-│       └── chat/page.tsx       # AI 对话
+│   └── seeds/                  # 食物和知识库种子数据
+└── frontend/
+    └── src/app/
+        ├── page.tsx            # 今日健康工作台
+        ├── onboarding/         # 教练选择 + 首次建档
+        ├── meals/              # 文本/图片餐食记录
+        ├── exercise/           # 手动运动记录
+        ├── chat/               # AI 私教工具台
+        └── review/             # 周度复盘页
 ```
 
-## 快速开始
+## 本地启动
 
-### 1. 环境准备
-
-```bash
-# 克隆项目
-git clone <repo-url> && cd NutriAgent
-
-# 复制环境变量
-cp .env.example backend/.env
-
-# 编辑 backend/.env，填入你的 DeepSeek API Key
-# DEEPSEEK_API_KEY=your_actual_key
-```
-
-### 2. 启动基础设施
+### 1. 启动基础服务
 
 ```bash
-# 启动 PostgreSQL (pgvector) + Redis
 docker-compose up -d
 ```
 
-### 3. 启动后端
+### 2. 启动后端
 
 ```bash
 cd backend
-
-# 使用 Conda 创建并激活环境
 conda env create -f environment.yml
 conda activate nutriagent-backend
-
-# 如果已经创建过环境，只需要激活
-# conda activate nutriagent-backend
-
-# 加载种子数据（首次运行）
 python seeds/load_seeds.py
-
-# 导入 RAG 知识库（首次运行）
 python -c "import asyncio; from app.rag.ingestion import ingest_all; asyncio.run(ingest_all())"
-
-# 启动 API 服务
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
-### 4. 启动前端
+### 3. 启动前端
 
 ```bash
 cd frontend
-# 本地开发时让前端指向 8001 后端
-# Windows:
-set NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001/api/v1
-# macOS/Linux:
-# export NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001/api/v1
 npm install
+
+# Windows
+set NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001/api/v1
+
+# macOS / Linux
+# export NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001/api/v1
+
 npm run dev
 ```
 
-访问 http://localhost:3000 开始使用。
+访问 `http://localhost:3000`。
 
-## API 端点
+## 关键接口
 
 | 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/v1/auth/register` | 用户注册 |
-| POST | `/api/v1/auth/login` | 用户登录 |
-| PUT | `/api/v1/users/me/profile` | 更新用户画像 |
-| GET | `/api/v1/foods/?q=` | 搜索食物库 |
-| POST | `/api/v1/meals/` | 创建饮食记录 |
-| POST | `/api/v1/meals/parse` | AI 解析饮食文字 |
-| POST | `/api/v1/meals/image` | 图片食物识别 |
-| GET | `/api/v1/meals/daily-summary` | 每日营养汇总 |
-| POST | `/api/v1/chat/` | AI 对话（统一入口） |
-| POST | `/api/v1/health/weight` | 记录体重 |
+|---|---|---|
+| `GET` | `/api/v1/users/me/profile` | 获取单用户画像 |
+| `POST` | `/api/v1/meals/parse` | 文本餐食解析 |
+| `POST` | `/api/v1/meals/image` | 图片餐食识别 |
+| `POST` | `/api/v1/meals/` | 保存餐食记录 |
+| `GET` | `/api/v1/meals/daily-summary` | 获取每日营养与热量汇总 |
+| `POST` | `/api/v1/exercises/` | 保存运动记录 |
+| `GET` | `/api/v1/exercises/` | 获取某日运动记录 |
+| `POST` | `/api/v1/chat/` | AI 私教统一对话入口 |
+| `POST` | `/api/v1/health/weight` | 记录体重 |
+| `GET` | `/api/v1/health/weekly-review` | 获取最近 7 天周复盘 |
 
-Swagger 文档：http://127.0.0.1:8001/docs
+## 面试可讲的设计点
 
-## Agent 工作流
+### 1. 为什么做成单用户模式
+为了聚焦 AI 应用本身，把登录、多租户、权限和商业化逻辑从主线剥离，优先做完整用户闭环与高质量交互体验。
 
-```
-用户消息 → Router Agent（意图分类）
-  ├── log_meal      → 食物解析 → 数据库匹配 → 记录 → 营养分析
-  ├── query_nutrition → SQL 查询 → 汇总展示
-  ├── ask_knowledge  → RAG 向量检索 → LLM 生成回答
-  ├── recommend_recipe → 读取画像 + 剩余热量 → 个性化推荐
-  └── general_chat   → 直接 LLM 回答
-```
+### 2. 为什么聊天页不是普通聊天框
+把高频任务入口前置，降低用户提问成本；后端先做意图识别与上下文组装，再按任务路由给模型，能明显提高回答相关性。
 
-## 核心功能演示
+### 3. 为什么要有周复盘页
+作品集项目如果只有“记录”没有“复盘”，完成度会明显不足。周复盘把短期记录转成阶段性结果，更适合演示和讲业务闭环。
 
-1. **记录饮食**："我中午吃了两碗米饭和一个鸡腿" → 自动解析 + 热量计算 + 营养分析
-2. **查询汇总**："今天吃了多少热量" → 返回今日摄入 vs 目标
-3. **知识问答**："减脂期间主食应该怎么选" → RAG 检索膳食指南回答
-4. **食谱推荐**："推荐一顿500卡的晚餐" → 结合个人画像推荐
-5. **Dashboard**：热量环形图 + 宏量营养素进度 + 餐食列表
+## 简历一句话版本
 
-## 环境变量
-
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `DATABASE_URL` | PostgreSQL 连接 | `postgresql+asyncpg://nutriagent:nutriagent123@localhost:5432/nutriagent` |
-| `REDIS_URL` | Redis 连接 | `redis://localhost:6379/0` |
-| `DEEPSEEK_API_KEY` | DeepSeek API 密钥 | （必填） |
-| `DEEPSEEK_BASE_URL` | API 地址 | `https://api.deepseek.com/v1` |
-| `JWT_SECRET_KEY` | JWT 签名密钥 | `nutriagent-secret-key-change-in-production` |
+一个面向减脂场景的 AI 健康教练 Web 应用，支持首次建档、多模态餐食识别、运动记录、热量缺口计算、AI 私教任务型对话与周度复盘。
