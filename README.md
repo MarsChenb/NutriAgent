@@ -140,6 +140,17 @@ User Input
 
 这让它不再只是“调个模型接口”，而是具备了可调试、可演示、可解释的 Agent 感。
 
+### 6. Memory
+
+- 短期记忆：基于 `conversation_id` 保存最近会话，支持澄清追问后的续接
+- 长期记忆：把用户目标、口味偏好、过敏信息、饮食限制、健康史同步到 `long_term_memories`
+- 调用工具和生成建议时只注入精选记忆，而不是把所有历史全量塞给模型
+
+### 7. Evaluation
+
+- 提供离线可跑的最小评估，覆盖规则路由、计划模式、工具选择和澄清触发
+- 当前使用固定 case 做回归，适合在本地快速验证 Agent 骨架是否跑偏
+
 ## 技术栈
 
 ### 前端
@@ -247,7 +258,7 @@ npm run dev
 ```bash
 python -m compileall backend\app backend\tests
 cd backend
-python -m unittest tests.test_agent_planner -v
+python -m unittest tests.test_agent_planner tests.test_agent_memory tests.test_agent_evaluation -v
 ```
 
 ### 前端

@@ -17,6 +17,14 @@ from app.agents.clarifier import (
 )
 from app.agents.coach_personas import get_coach_persona
 from app.agents.food_parser import parse_meal_text, resolve_foods
+from app.agents.memory import (
+    append_conversation_message,
+    fetch_long_term_memories,
+    fetch_recent_conversation,
+    format_conversation_context,
+    format_memory_context,
+    sync_profile_memories,
+)
 from app.agents.nutrition_agent import analyze_nutrition
 from app.agents.planner import build_execution_plan
 from app.agents.recipe_agent import recommend_recipe
@@ -66,7 +74,14 @@ def _build_recent_exercises_text(recent_exercises: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def _build_context_snapshot(user_profile: dict, daily_summary: dict, recent_meals: list[dict], recent_exercises: list[dict]) -> dict:
+def _build_context_snapshot(
+    user_profile: dict,
+    daily_summary: dict,
+    recent_meals: list[dict],
+    recent_exercises: list[dict],
+    long_term_memories: list[dict] | None = None,
+    recent_conversation: list[dict] | None = None,
+) -> dict:
     return {
         "goal": _normalize_goal(user_profile.get("goal_type")),
         "coach_persona": user_profile.get("coach_persona") or "mira",
@@ -75,6 +90,9 @@ def _build_context_snapshot(user_profile: dict, daily_summary: dict, recent_meal
         "calorie_deficit": daily_summary.get("calorie_deficit", 0),
         "recent_meals_count": len(recent_meals),
         "recent_exercises_count": len(recent_exercises),
+        "memory_count": len(long_term_memories or []),
+        "conversation_turns": len(recent_conversation or []),
+        "top_memories": [item["memory_text"] for item in (long_term_memories or [])[:3]],
     }
 
 
@@ -147,6 +165,8 @@ async def _chat_with_context(
     daily_summary: dict,
     recent_meals: list[dict],
     recent_exercises: list[dict],
+    long_term_memories: list[dict],
+    recent_conversation: list[dict],
     task_instruction: str,
 ) -> str:
     coach = get_coach_persona(coach_persona_id)
@@ -182,6 +202,12 @@ async def _chat_with_context(
 
 最近运动：
 {_build_recent_exercises_text(recent_exercises)}
+
+长期记忆：
+{format_memory_context(long_term_memories)}
+
+最近会话：
+{format_conversation_context(recent_conversation)}
 
 用户问题：{user_input}"""
 
@@ -276,6 +302,8 @@ async def _handle_ask_knowledge(
     daily_summary: dict,
     recent_meals: list[dict],
     recent_exercises: list[dict],
+    long_term_memories: list[dict],
+    recent_conversation: list[dict],
     db: AsyncSession,
 ) -> dict[str, Any]:
     from app.rag.retriever import retrieve_relevant_chunks
@@ -292,6 +320,8 @@ async def _handle_ask_knowledge(
         daily_summary,
         recent_meals,
         recent_exercises,
+        long_term_memories,
+        recent_conversation,
         f"你当前的任务是回答训练后饮食、减脂饮食原则、营养知识等问题。检索知识如下：\n{rag_context}\n如果检索结果不足，可以基于常识回答，但要避免编造具体研究结论。",
     )
     if sources:
@@ -303,11 +333,14 @@ def _tool_payload(context: dict[str, Any], step: dict[str, Any]) -> dict[str, An
     return {
         "user_input": context["user_input"],
         "user_id": context["user_id"],
+        "conversation_id": context.get("conversation_id"),
         "db": context["db"],
         "user_profile": context["user_profile"],
         "daily_summary": context["daily_summary"],
         "recent_meals": context["recent_meals"],
         "recent_exercises": context["recent_exercises"],
+        "long_term_memories": context["long_term_memories"],
+        "recent_conversation": context["recent_conversation"],
         "coach_persona_id": context["user_profile"].get("coach_persona"),
         "step": step,
     }
@@ -339,6 +372,8 @@ def _build_tool_registry() -> ToolRegistry:
             payload["daily_summary"],
             payload["recent_meals"],
             payload["recent_exercises"],
+            payload["long_term_memories"],
+            payload["recent_conversation"],
             "你当前的任务是回答与今日热量预算、还剩多少能吃什么、如何保持缺口相关的问题。",
         )
         return {"message": response, "trace_summary": "结合今日预算生成饮食建议"}
@@ -350,6 +385,8 @@ def _build_tool_registry() -> ToolRegistry:
             payload["daily_summary"],
             payload["recent_meals"],
             payload["recent_exercises"],
+            payload["long_term_memories"],
+            payload["recent_conversation"],
             payload["db"],
         )
 
@@ -370,6 +407,8 @@ def _build_tool_registry() -> ToolRegistry:
             payload["daily_summary"],
             payload["recent_meals"],
             payload["recent_exercises"],
+            payload["long_term_memories"],
+            payload["recent_conversation"],
             "你当前的任务是作为长期陪伴型 AI 私教回答用户，适度引导用户继续记录、执行和复盘。",
         )
         return {"message": response, "trace_summary": "完成单步聊天回复"}
@@ -498,19 +537,32 @@ async def run_agent(
 
     intent = await classify_intent(merged_input)
     user_profile, daily_summary, recent_meals, recent_exercises = await _load_user_context(db, user_id)
+    await sync_profile_memories(db, user_id, user_profile)
+    long_term_memories = await fetch_long_term_memories(db, user_id)
+    recent_conversation = await fetch_recent_conversation(db, user_id, conversation_id=conversation_id)
     plan_info = build_execution_plan(merged_input, intent)
     plan_steps = plan_info["steps"]
     clarification = detect_clarification_need(merged_input, plan_steps, recent_exercises)
 
     if clarification.requires_clarification:
         save_pending_clarification(session_key, merged_input, clarification.question or "", clarification.missing_fields or [])
+        await append_conversation_message(db, user_id, "user", user_input, conversation_id=conversation_id)
+        await append_conversation_message(db, user_id, "assistant", clarification.question or "", conversation_id=conversation_id)
+        await db.commit()
         return {
             "response": clarification.question,
             "intent": intent,
             "mode": "clarification",
             "plan": plan_steps,
             "execution_trace": [],
-            "context_snapshot": _build_context_snapshot(user_profile, daily_summary, recent_meals, recent_exercises),
+            "context_snapshot": _build_context_snapshot(
+                user_profile,
+                daily_summary,
+                recent_meals,
+                recent_exercises,
+                long_term_memories,
+                recent_conversation,
+            ),
             "requires_clarification": True,
             "clarification_question": clarification.question,
             "missing_fields": clarification.missing_fields or [],
@@ -522,14 +574,20 @@ async def run_agent(
     context = {
         "user_input": merged_input,
         "user_id": user_id,
+        "conversation_id": conversation_id,
         "db": db,
         "user_profile": user_profile,
         "daily_summary": daily_summary,
         "recent_meals": recent_meals,
         "recent_exercises": recent_exercises,
+        "long_term_memories": long_term_memories,
+        "recent_conversation": recent_conversation,
     }
     step_results, execution_trace = await _execute_plan(registry, plan_steps, context)
     final_response = _compose_final_response(str(plan_info["mode"]), step_results)
+    await append_conversation_message(db, user_id, "user", user_input, conversation_id=conversation_id)
+    await append_conversation_message(db, user_id, "assistant", final_response, conversation_id=conversation_id)
+    await db.commit()
 
     return {
         "response": final_response,
@@ -537,7 +595,14 @@ async def run_agent(
         "mode": plan_info["mode"],
         "plan": plan_steps,
         "execution_trace": execution_trace,
-        "context_snapshot": _build_context_snapshot(user_profile, context["daily_summary"], recent_meals, recent_exercises),
+        "context_snapshot": _build_context_snapshot(
+            user_profile,
+            context["daily_summary"],
+            recent_meals,
+            recent_exercises,
+            long_term_memories,
+            recent_conversation,
+        ),
         "requires_clarification": False,
         "clarification_question": None,
         "missing_fields": [],
