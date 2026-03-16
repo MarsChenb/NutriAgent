@@ -1,64 +1,169 @@
-﻿# NutriAgent - AI 健康教练 Web 应用
+# NutriAgent
 
-NutriAgent 是一个面向减脂与健康管理场景的单用户 AI 应用项目。它把竞品中的核心闭环拆成一个更适合 Web 演示和面试表达的版本：`首次建档 -> 每日执行 -> AI 私教 -> 周度复盘`。
+一个面向减脂与健康管理场景的移动端优先 AI Agent Web 应用。
 
-项目定位不是商业化 SaaS，而是一个可完整演示的 AI 应用作品，重点体现：
-- 多模态餐食记录
-- 个性化健康画像
-- AI 私教任务型交互
-- 饮食 + 运动能量平衡计算
-- 周度复盘与 AI 总结
+NutriAgent 不是通用聊天 Demo，也不是拼概念的“多 Agent 壳”。它围绕真实健康场景，把 `首次建档 -> 每日执行 -> Agent 私教 -> 周计划 / 周复盘` 做成了一个可完整演示的产品闭环。
 
-## 适合演示的核心功能
+当前版本重点体现三件事：
 
-### 1. 首次建档与教练人格选择
-- 选择 3 位不同风格的 AI 教练
-- 分 9 步采集个人画像：目标、性别、年龄、身高、当前体重、目标体重、体型、运动习惯、疾病史
-- 实时计算 BMI 与目标减重差值
+- 移动端优先的 AI 健康教练产品体验
+- 多模态记录、能量平衡计算与个性化建议
+- Router + Planner + Executor 驱动的任务型 Agent 工作流
+
+## 项目定位
+
+这个项目适合用于：
+
+- AI 应用开发岗位
+- Agent 开发 / LLM 应用工程岗位
+- 作品集展示、录屏演示、面试讲解
+
+它不追求商业化 SaaS 完整度，而是强调：
+
+- 有真实业务闭环
+- 有可讲清楚的 Agent 架构
+- 有能截图和演示的产品形态
+- 有前后端一体化落地能力
+
+## 当前主流程
+
+```text
+选择教练
+-> 9 步移动端建档
+-> 今日健康工作台
+-> 文本 / 图片记录餐食
+-> 手动记录运动
+-> Agent 私教拆解任务并执行
+-> 查看周计划 / 周复盘
+```
+
+## 核心能力
+
+### 1. 移动端建档与教练人格选择
+
+- 支持 3 位不同风格的 AI 教练
+- 分 9 步采集目标、性别、年龄、身高、体重、体型、运动习惯、健康史
+- 实时计算 BMI 与目标体重差值
+- 页面风格按移动端产品重做，适合录屏和截图
 
 ### 2. 今日健康工作台
-- 按日期查看每日饮食与运动数据
-- 展示热量预算、饮食摄入、运动消耗、热量缺口
+
+- 按日期查看当天饮食与运动数据
+- 展示剩余热量、饮食摄入、运动消耗、热量缺口、三大营养素进度
 - 按早餐 / 午餐 / 晚餐 / 加餐 / 运动组织当天记录
+- 底部固定快速记录区，直接连接记餐、拍照和 Agent
 
 ### 3. 多模态餐食记录
-- 支持文本描述解析
-- 支持图片上传识别
-- 解析后展示食物项、克数、总热量、三大营养素
+
+- 支持自然语言解析餐食
+- 支持图片上传识别食物
+- 自动换算热量、蛋白质、脂肪、碳水
 - 保存后生成 AI 简评并回流首页展示
 
 ### 4. 运动记录与能量平衡
-- 手动记录运动类型、时长、消耗热量、备注
-- 自动汇总到每日热量缺口
-- 保存后生成 AI 运动点评
 
-### 5. AI 私教工具台
-- 保留自由聊天
-- 提供快捷任务：查食物热量、推荐饮食、训练后怎么吃、今天还能吃什么
-- 注入用户画像、今日预算、最近餐食与最近运动作为上下文
-- 回答风格随教练人格变化
+- 支持手动记录运动类型、时长、消耗热量、备注
+- 自动更新每日热量缺口
+- 首页和周复盘会同步展示训练表现
 
-### 6. 周度复盘页
+### 5. Agent 私教工具台
+
+- 保留自由对话
+- 提供快捷任务入口
+- 对复杂任务进行拆解和执行
+- 在信息不足时主动澄清追问
+- 可折叠查看 plan 和 execution trace
+
+### 6. 周计划 / 周复盘
+
 - 展示最近 7 天饮食摄入、运动消耗、热量缺口、体重变化
-- 每日标记执行状态：达标 / 未达标 / 数据不足
-- 页面顶部生成 AI 周总结，输出本周表现、问题与下周建议
+- 每日标记达标 / 未达标 / 数据不足
+- 顶部输出 AI 周总结
+- 支持直接跳转回 Agent 继续追问
 
-## 项目截图建议
+## Agent 架构
 
-如果你准备录屏或写作品集，建议截这 5 类页面：
-1. 教练选择 + 9 步建档
-2. 今日健康工作台首页
-3. 餐食识别结果页
-4. AI 私教工具台
-5. 周度复盘页
+当前版本把 Agent 主流程收敛成下面这套结构：
 
-## 技术亮点
+```text
+User Input
+-> Router
+-> Direct Mode / Planned Mode / Clarification Mode
+-> Planner
+-> Tool Registry
+-> Executor
+-> Summarized Response
+-> Frontend shows response + plan + trace
+```
 
-- 前端：Next.js App Router + TypeScript + Tailwind CSS
-- 后端：FastAPI + SQLAlchemy Async
-- 大模型接入：DeepSeek OpenAI 兼容接口
-- AI 交互：任务型路由 + Persona Prompt + Context Engineering
-- 数据层：餐食、运动、日汇总、体重记录四类核心实体联动
+### 1. Router
+
+- 先判断用户请求属于哪类任务
+- 识别是单步任务还是复合任务
+
+### 2. Planner
+
+- 对复杂任务生成多步 plan
+- 每一步显式绑定一个 tool
+- 当前重点支持：
+  - 记录饮食并分析预算
+  - 结合训练推荐一餐
+  - 规划今天剩余饮食
+
+### 3. Tool Registry
+
+当前已包装的核心工具包括：
+
+- `log_meal`
+- `lookup_food`
+- `answer_nutrition`
+- `answer_knowledge`
+- `recommend_recipe`
+- `general_chat`
+
+### 4. Clarifier
+
+- 当任务执行需要更多信息时，不直接瞎答
+- 返回结构化追问：
+  - `requires_clarification`
+  - `clarification_question`
+  - `missing_fields`
+- 前端会把这类状态渲染成明显的下一步动作
+
+### 5. Execution Trace
+
+每次 Agent 执行都能向前端返回：
+
+- `mode`
+- `plan`
+- `execution_trace`
+
+这让它不再只是“调个模型接口”，而是具备了可调试、可演示、可解释的 Agent 感。
+
+## 技术栈
+
+### 前端
+
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- 移动端优先 UI
+
+### 后端
+
+- FastAPI
+- SQLAlchemy Async
+- PostgreSQL
+- pgvector
+
+### AI / Agent
+
+- DeepSeek OpenAI 兼容接口
+- Router + Planner + Executor
+- Tool Registry
+- Human-in-the-Loop Clarification
+- Context Engineering
+- 轻量 RAG
 
 ## 项目结构
 
@@ -66,22 +171,22 @@ NutriAgent 是一个面向减脂与健康管理场景的单用户 AI 应用项�
 NutriAgent/
 ├── backend/
 │   ├── app/
-│   │   ├── agents/             # 私教对话路由、Prompt、上下文组装
-│   │   ├── api/v1/             # meals / exercises / health / chat 等接口
+│   │   ├── agents/             # Planner / Clarifier / Tool Registry / Graph
+│   │   ├── api/v1/             # meals / exercises / health / chat / users
 │   │   ├── models/             # 用户、餐食、运动、体重、日汇总模型
-│   │   ├── schemas/            # Pydantic 请求与响应模型
-│   │   ├── services/           # 餐食汇总、运动汇总等业务逻辑
-│   │   ├── rag/                # RAG 检索与知识导入
+│   │   ├── schemas/            # 请求与响应模型
+│   │   ├── services/           # 餐食与日汇总等业务逻辑
+│   │   ├── rag/                # 知识导入与检索
 │   │   └── vision/             # 图片食物识别
-│   └── seeds/                  # 食物和知识库种子数据
+│   └── tests/                  # Agent planner / clarifier 基础测试
 └── frontend/
     └── src/app/
         ├── page.tsx            # 今日健康工作台
-        ├── onboarding/         # 教练选择 + 首次建档
-        ├── meals/              # 文本/图片餐食记录
+        ├── onboarding/         # 教练选择 + 建档流程
+        ├── meals/              # 文本 / 图片餐食记录
         ├── exercise/           # 手动运动记录
-        ├── chat/               # AI 私教工具台
-        └── review/             # 周度复盘页
+        ├── chat/               # Agent Studio
+        └── review/             # 周计划 / 周复盘
 ```
 
 ## 本地启动
@@ -118,34 +223,69 @@ set NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001/api/v1
 npm run dev
 ```
 
-访问 `http://localhost:3000`。
+访问 `http://localhost:3000`
 
 ## 关键接口
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | `GET` | `/api/v1/users/me/profile` | 获取单用户画像 |
+| `PUT` | `/api/v1/users/me/profile` | 更新建档信息 |
 | `POST` | `/api/v1/meals/parse` | 文本餐食解析 |
 | `POST` | `/api/v1/meals/image` | 图片餐食识别 |
 | `POST` | `/api/v1/meals/` | 保存餐食记录 |
 | `GET` | `/api/v1/meals/daily-summary` | 获取每日营养与热量汇总 |
 | `POST` | `/api/v1/exercises/` | 保存运动记录 |
 | `GET` | `/api/v1/exercises/` | 获取某日运动记录 |
-| `POST` | `/api/v1/chat/` | AI 私教统一对话入口 |
-| `POST` | `/api/v1/health/weight` | 记录体重 |
+| `POST` | `/api/v1/chat/` | Agent 私教统一入口 |
 | `GET` | `/api/v1/health/weekly-review` | 获取最近 7 天周复盘 |
 
-## 面试可讲的设计点
+## 已完成的验证
 
-### 1. 为什么做成单用户模式
-为了聚焦 AI 应用本身，把登录、多租户、权限和商业化逻辑从主线剥离，优先做完整用户闭环与高质量交互体验。
+### 后端
 
-### 2. 为什么聊天页不是普通聊天框
-把高频任务入口前置，降低用户提问成本；后端先做意图识别与上下文组装，再按任务路由给模型，能明显提高回答相关性。
+```bash
+python -m compileall backend\app backend\tests
+cd backend
+python -m unittest tests.test_agent_planner -v
+```
 
-### 3. 为什么要有周复盘页
-作品集项目如果只有“记录”没有“复盘”，完成度会明显不足。周复盘把短期记录转成阶段性结果，更适合演示和讲业务闭环。
+### 前端
+
+```bash
+cd frontend
+npm run build
+```
+
+## 推荐演示路径
+
+如果你准备录屏或面试现场演示，建议按这个顺序：
+
+1. 教练选择与移动端建档
+2. 今日健康工作台首页
+3. 文本或图片记录一餐
+4. 进入 Agent Studio 发起复合任务
+5. 展示 Agent 的 plan / execution trace
+6. 打开周计划 / 周复盘页收束结果
+
+## 面试可讲的重点
+
+### 1. 为什么不是普通聊天应用
+
+因为健康管理场景不是泛问答，用户的真实需求是“记录、判断、推荐、复盘”这一整条任务链，所以我把聊天页设计成了 Agent Studio，而不是单纯聊天框。
+
+### 2. 为什么先做单用户模式
+
+为了先聚焦 AI 应用主线，把登录、多租户、权限和商业化逻辑从主路径上剥离，优先验证用户闭环和 Agent 交互。
+
+### 3. 为什么要有 Clarification
+
+很多健康类任务如果信息不足，直接回答很容易失真。比如记餐时缺餐次和分量、推荐训练后饮食时缺运动上下文，所以我加入了澄清追问而不是让模型硬猜。
+
+### 4. 为什么前端做成移动端优先
+
+健康管理本来就是高频、轻操作、日常记录型场景。移动端优先更符合真实使用方式，也更适合作品展示和演示录屏。
 
 ## 简历一句话版本
 
-一个面向减脂场景的 AI 健康教练 Web 应用，支持首次建档、多模态餐食识别、运动记录、热量缺口计算、AI 私教任务型对话与周度复盘。
+一个面向健康管理场景的移动端优先 AI Agent Web 应用，支持教练建档、多模态餐食记录、运动记录、热量缺口计算、任务型 Agent 对话与周计划 / 周复盘。
