@@ -2,18 +2,39 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
+import {
+  Bot,
+  ChevronRight,
+  Compass,
+  Flame,
+  PanelTop,
+  Salad,
+  SendHorizonal,
+  Sparkles,
+  Swords,
+  Target,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { getCoachPersona } from "@/lib/coach-personas";
-import type { ChatMessage, DailySummary, ExerciseLog, MealLog, UserProfile } from "@/lib/types";
+import type {
+  AgentPlanStep,
+  AgentTraceStep,
+  ChatApiResponse,
+  ChatMessage,
+  DailySummary,
+  ExerciseLog,
+  MealLog,
+  UserProfile,
+} from "@/lib/types";
 
-type ChatApiResponse = {
-  response: string;
-  intent?: string | null;
-  context_snapshot?: {
-    calorie_remaining?: number;
-    calorie_deficit?: number;
-  } | null;
+type UiChatMessage = ChatMessage & {
+  mode?: string | null;
+  plan?: AgentPlanStep[] | null;
+  executionTrace?: AgentTraceStep[] | null;
+  requiresClarification?: boolean;
+  clarificationQuestion?: string | null;
+  missingFields?: string[] | null;
 };
 
 type QuickTask = {
@@ -21,37 +42,32 @@ type QuickTask = {
   title: string;
   description: string;
   prompt: string;
-  emoji: string;
 };
 
 const quickTasks: QuickTask[] = [
   {
     id: "lookup-food",
     title: "查食物热量",
-    description: "查询食物参考热量和三大营养素",
+    description: "直接查询食物参考热量和三大营养素。",
     prompt: "帮我查香蕉的热量和三大营养素。",
-    emoji: "热",
   },
   {
     id: "recommend-meal",
-    title: "推荐饮食",
-    description: "根据我今天的预算推荐下一餐",
+    title: "推荐一餐",
+    description: "结合我今天的预算推荐下一餐。",
     prompt: "结合我今天的热量预算，推荐一顿适合现在吃的减脂餐。",
-    emoji: "荐",
   },
   {
     id: "post-workout",
     title: "训练后怎么吃",
-    description: "围绕恢复和减脂做建议",
+    description: "围绕恢复和减脂平衡给建议。",
     prompt: "我刚训练完，接下来怎么吃更适合恢复又不影响减脂？",
-    emoji: "练",
   },
   {
-    id: "remaining-budget",
-    title: "今天还能吃什么",
-    description: "结合剩余热量给行动建议",
-    prompt: "结合我今天的剩余热量，告诉我现在还能吃什么。",
-    emoji: "余",
+    id: "complex-task",
+    title: "复合任务示例",
+    description: "让 Agent 拆解并执行多步任务。",
+    prompt: "我晚餐吃了鸡胸肉和米饭，然后帮我看看今天还能吃什么并推荐晚餐。",
   },
 ];
 
@@ -66,7 +82,7 @@ function goalLabel(goalType: string | null) {
     case "detox":
       return "饮食重置";
     default:
-      return "当前目标";
+      return "建立规律";
   }
 }
 
@@ -106,8 +122,35 @@ function exerciseTypeLabel(type: string) {
   }
 }
 
-function EmptyInfo({ text }: { text: string }) {
-  return <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50/90 px-4 py-4 text-sm leading-6 text-slate-500">{text}</div>;
+function modeCopy(mode?: string | null) {
+  switch (mode) {
+    case "planned":
+      return "Planned Execution";
+    case "clarification":
+      return "Clarification Needed";
+    default:
+      return "Direct Answer";
+  }
+}
+
+function modeTone(mode?: string | null) {
+  switch (mode) {
+    case "planned":
+      return "bg-[#ece9ff] text-[#6f63ff]";
+    case "clarification":
+      return "bg-[#fff3ea] text-[#ff8b6a]";
+    default:
+      return "bg-[#e9fbf7] text-[#2bbba5]";
+  }
+}
+
+function formatMealNames(meal: MealLog) {
+  const names = meal.items.map((item) => item.recognized_name).filter(Boolean);
+  return names.length > 0 ? names.join("、") : "未命名餐食";
+}
+
+function EmptyPanel({ text }: { text: string }) {
+  return <div className="soft-panel rounded-[22px] px-4 py-4 text-sm leading-6 text-slate-500">{text}</div>;
 }
 
 export default function ChatPage() {
@@ -116,10 +159,11 @@ export default function ChatPage() {
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [recentMeals, setRecentMeals] = useState<MealLog[]>([]);
   const [recentExercises, setRecentExercises] = useState<ExerciseLog[]>([]);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<UiChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [bootstrapping, setBootstrapping] = useState(true);
+  const conversationIdRef = useRef(`agent-studio-${Date.now()}`);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -148,8 +192,9 @@ export default function ChatPage() {
         setMessages([
           {
             role: "assistant",
-            content: `${coach.greeting}\n\n我已经拿到你的画像、今天的热量预算和最近记录了。你当前目标是${goalLabel(profileRes.data.goal_type)}，今天大约还剩 ${remaining} kcal 可以安排。你可以直接问我，也可以点上面的快捷任务。`,
+            content: `${coach.greeting}\n\n今天我已经拿到你的画像和预算信息了。你当前目标是 ${goalLabel(profileRes.data.goal_type)}，今天大约还剩 ${remaining} kcal 可安排。你可以直接问我，也可以点下面的任务卡让我开始执行。`,
             timestamp: new Date(),
+            mode: "direct",
           },
         ]);
       } catch (error) {
@@ -159,6 +204,7 @@ export default function ChatPage() {
             role: "assistant",
             content: "AI 私教初始化失败，请确认后端服务可用。",
             timestamp: new Date(),
+            mode: "direct",
           },
         ]);
       } finally {
@@ -178,7 +224,7 @@ export default function ChatPage() {
     if (!userMsg || loading) return;
     setInput("");
 
-    const newUserMessage: ChatMessage = {
+    const newUserMessage: UiChatMessage = {
       role: "user",
       content: userMsg,
       timestamp: new Date(),
@@ -187,13 +233,24 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await api.post<ChatApiResponse>("/chat/", { message: userMsg });
-      const assistantMessage: ChatMessage = {
+      const res = await api.post<ChatApiResponse>("/chat/", {
+        message: userMsg,
+        conversation_id: conversationIdRef.current,
+      });
+
+      const assistantMessage: UiChatMessage = {
         role: "assistant",
         content: res.data.response,
         timestamp: new Date(),
+        mode: res.data.mode,
+        plan: res.data.plan,
+        executionTrace: res.data.execution_trace,
+        requiresClarification: res.data.requires_clarification,
+        clarificationQuestion: res.data.clarification_question,
+        missingFields: res.data.missing_fields,
       };
       setMessages((prev) => [...prev, assistantMessage]);
+
       if (res.data.context_snapshot?.calorie_remaining != null && summary) {
         setSummary({
           ...summary,
@@ -209,6 +266,7 @@ export default function ChatPage() {
           role: "assistant",
           content: "AI 私教暂时不可用，请稍后再试。",
           timestamp: new Date(),
+          mode: "direct",
         },
       ]);
     } finally {
@@ -217,201 +275,224 @@ export default function ChatPage() {
   }
 
   const coach = getCoachPersona(profile?.coach_persona);
-  const summaryCards = useMemo(() => {
+  const headerCards = useMemo(() => {
     if (!summary) return [];
     return [
-      { label: "剩余热量", value: `${Math.round(summary.calorie_remaining_kcal || 0)} kcal`, tone: "bg-emerald-50 text-emerald-950" },
-      { label: "今日缺口", value: `${Math.round(summary.calorie_deficit_kcal || 0)} kcal`, tone: "bg-slate-950 text-white" },
-      { label: "运动消耗", value: `${Math.round(summary.total_exercise_calories_kcal || 0)} kcal`, tone: "bg-sky-50 text-sky-950" },
+      { label: "剩余热量", value: `${Math.round(summary.calorie_remaining_kcal || 0)} kcal`, tone: "bg-[#e9fbf7] text-[#2bbba5]" },
+      { label: "今日缺口", value: `${Math.round(summary.calorie_deficit_kcal || 0)} kcal`, tone: "bg-[#1e1c2b] text-white" },
+      { label: "训练消耗", value: `${Math.round(summary.total_exercise_calories_kcal || 0)} kcal`, tone: "bg-[#eef5ff] text-[#6a88ff]" },
     ];
   }, [summary]);
 
   if (bootstrapping) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
-        <div className="w-full max-w-sm rounded-[32px] border border-white/70 bg-white/92 p-7 text-center shadow-[0_22px_60px_rgba(15,23,42,0.12)] backdrop-blur">
-          <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-slate-900" />
-          <h1 className="mt-5 text-2xl font-semibold text-slate-950">正在唤醒你的 AI 私教</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">教练正在读取你的画像、今日预算和最近记录...</p>
+        <div className="glass-card w-full rounded-[32px] px-6 py-8 text-center">
+          <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-[linear-gradient(135deg,#7b6cff,#9adfd7)]" />
+          <h1 className="mt-5 text-2xl font-semibold text-slate-950">正在唤醒你的 Agent 私教</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">画像、预算和最近记录正在同步中...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen px-4 pb-36 pt-4 md:px-6 md:pt-6">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.72),transparent_70%)]" />
-
-      <section className={`relative overflow-hidden rounded-[34px] bg-gradient-to-br ${coach.gradientClass} p-5 text-white shadow-[0_24px_80px_rgba(15,23,42,0.2)] md:p-7`}>
-        <div className="absolute -right-8 top-8 h-32 w-32 rounded-full bg-white/12 blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 h-24 w-40 -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
-
-        <div className="relative flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-          <div className="max-w-md">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/12 px-3 py-1 text-xs text-white/80 backdrop-blur">
-              <span className="text-[10px] tracking-[0.28em]">AI COACH STUDIO</span>
-              <span className="rounded-full bg-white/20 px-2 py-0.5">{coach.mbti}</span>
-            </div>
-            <div className="mt-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-white/18 text-lg font-semibold backdrop-blur">{coach.name.slice(0, 1)}</div>
-              <div>
-                <div className="text-sm text-white/80">当前私教</div>
-                <h1 className="text-[30px] font-semibold tracking-tight">{coach.name} AI 私教</h1>
-              </div>
-            </div>
-            <p className="mt-4 text-sm leading-7 text-white/88">{coach.tagline}。这页不是空白聊天框，而是把你的目标、预算和最近执行情况都带进来的对话式工具台。</p>
+    <div className="px-4 pb-36 pt-5">
+      <section className={`rounded-[34px] bg-gradient-to-br ${coach.gradientClass} px-5 py-6 text-white shadow-[0_24px_60px_rgba(111,99,255,0.24)]`}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-xs uppercase tracking-[0.26em] text-white/75">Agent Studio</div>
+            <h1 className="mt-3 text-[30px] font-semibold tracking-tight">{coach.name} AI 私教</h1>
+            <p className="mt-3 max-w-[250px] text-sm leading-7 text-white/88">{coach.tagline}。这不是普通聊天框，而是会拆任务、调工具、必要时追问的工作台。</p>
           </div>
-
-          <div className="grid grid-cols-2 gap-3 md:w-[320px]">
-            <div className="rounded-[24px] bg-white/14 p-4 backdrop-blur">
-              <div className="text-xs text-white/70">目标焦点</div>
-              <div className="mt-2 text-2xl font-semibold">{goalLabel(profile?.goal_type || null)}</div>
-              <div className="mt-2 text-xs text-white/75">画像和当日状态已注入</div>
-            </div>
-            <div className="rounded-[24px] bg-white/14 p-4 backdrop-blur">
-              <div className="text-xs text-white/70">今日对话建议</div>
-              <div className="mt-2 text-2xl font-semibold">先问一件事</div>
-              <div className="mt-2 text-xs text-white/75">例如下一餐、训练后恢复、热量判断</div>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="rounded-full bg-white/12 px-3 py-2 text-sm text-white/90"
+          >
+            返回首页
+          </button>
         </div>
 
-        <div className="relative mt-5 flex flex-wrap gap-2">
-          <button onClick={() => router.push("/review")} className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs text-white/90 backdrop-blur">
-            看周复盘
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button type="button" onClick={() => router.push("/review")} className="rounded-full bg-white/12 px-4 py-2 text-xs text-white/90">
+            看周计划
           </button>
-          <button onClick={() => router.push("/")} className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs text-white/90 backdrop-blur">
-            回首页
-          </button>
-          <button onClick={() => router.push("/onboarding")} className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs text-white/90 backdrop-blur">
+          <button type="button" onClick={() => router.push("/onboarding")} className="rounded-full bg-white/12 px-4 py-2 text-xs text-white/90">
             调整建档
           </button>
         </div>
       </section>
 
-      {summaryCards.length > 0 && (
-        <section className="mt-5 grid gap-4 md:grid-cols-3">
-          {summaryCards.map((item) => (
-            <div key={item.label} className={`rounded-[28px] border border-white/70 p-5 shadow-[0_16px_40px_rgba(148,163,184,0.14)] backdrop-blur ${item.tone}`}>
-              <div className={`text-xs ${item.tone.includes("text-white") ? "text-white/65" : "text-slate-500"}`}>{item.label}</div>
-              <div className="mt-3 text-3xl font-semibold tracking-tight">{item.value}</div>
+      {headerCards.length > 0 && (
+        <section className="mt-5 grid grid-cols-3 gap-3">
+          {headerCards.map((item) => (
+            <div key={item.label} className={`rounded-[24px] px-4 py-4 ${item.tone}`}>
+              <div className="text-[11px] opacity-75">{item.label}</div>
+              <div className="mt-2 text-xl font-semibold tracking-tight">{item.value}</div>
             </div>
           ))}
         </section>
       )}
 
-      <section className="mt-5 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_16px_40px_rgba(148,163,184,0.14)] backdrop-blur md:p-6">
+      <section className="mt-5 space-y-4">
+        <div className="glass-card rounded-[30px] px-5 py-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Quick Tasks</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">高频任务入口</h2>
+              <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Quick Tasks</div>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">一键发起任务</h2>
             </div>
-            <button onClick={() => router.push("/review")} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 shadow-sm">
-              查看周复盘
-            </button>
+            <div className="rounded-full bg-[#f3f1ff] px-3 py-1 text-xs font-medium text-[#6f63ff]">任务型交互</div>
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+
+          <div className="mt-5 space-y-3">
             {quickTasks.map((task) => (
               <button
                 key={task.id}
+                type="button"
                 onClick={() => handleSend(task.prompt)}
-                className="group rounded-[24px] border border-slate-200 bg-slate-50/90 p-4 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-[0_16px_28px_rgba(148,163,184,0.16)]"
+                className="soft-panel flex w-full items-center justify-between gap-4 rounded-[24px] px-4 py-4 text-left transition hover:bg-white"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-slate-950 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(15,23,42,0.18)]">
-                    {task.emoji}
-                  </div>
-                  <div className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] text-slate-500 group-hover:border-slate-300">点击发起</div>
+                <div>
+                  <div className="text-base font-semibold text-slate-950">{task.title}</div>
+                  <div className="mt-1 text-sm leading-6 text-slate-500">{task.description}</div>
                 </div>
-                <div className="mt-4 text-base font-semibold text-slate-950">{task.title}</div>
-                <div className="mt-2 text-sm leading-6 text-slate-500">{task.description}</div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
               </button>
             ))}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_16px_40px_rgba(148,163,184,0.14)] backdrop-blur md:p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Context</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">最近执行情报</h2>
+        <div className="glass-card rounded-[30px] px-5 py-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Context</div>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">当前上下文</h2>
+            </div>
+            <div className={`rounded-full bg-white px-3 py-1 text-xs font-medium ${coach.accentClass}`}>{goalLabel(profile?.goal_type || null)}</div>
+          </div>
+
+          <div className="mt-5 grid gap-4">
+            <div>
+              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-900">
+                <Salad className="h-4 w-4 text-[#2bbba5]" />
+                最近餐食
               </div>
-              <div className={`rounded-full px-3 py-1 text-xs font-medium ${coach.accentClass} bg-slate-50`}>{coach.style}</div>
+              <div className="space-y-3">
+                {recentMeals.length === 0 ? (
+                  <EmptyPanel text="今天还没有餐食记录。你直接描述刚刚吃了什么，我可以边记录边给建议。" />
+                ) : (
+                  recentMeals.map((meal) => (
+                    <div key={meal.id} className="soft-panel rounded-[22px] px-4 py-4">
+                      <div className="text-sm font-medium text-slate-900">{formatMealNames(meal)}</div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        {mealTypeLabel(meal.meal_type)} · {Math.round(meal.total_calories_kcal || 0)} kcal
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-1">
-              <div>
-                <div className="mb-3 text-sm font-medium text-slate-900">最近餐食</div>
-                <div className="space-y-3">
-                  {recentMeals.length === 0 ? (
-                    <EmptyInfo text="今天还没有餐食记录，问我时我会按你的画像和目标给建议。" />
-                  ) : (
-                    recentMeals.map((meal) => (
-                      <div key={meal.id} className="rounded-[22px] bg-slate-50/90 px-4 py-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">{meal.items.map((item) => item.recognized_name).filter(Boolean).join("、") || "未命名餐食"}</div>
-                            <div className="mt-1 text-xs text-slate-500">{mealTypeLabel(meal.meal_type)} · {Math.round(meal.total_calories_kcal || 0)} kcal</div>
-                          </div>
-                          <div className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">{mealTypeLabel(meal.meal_type)}</div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+            <div>
+              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-900">
+                <Swords className="h-4 w-4 text-[#6a88ff]" />
+                最近运动
               </div>
-
-              <div>
-                <div className="mb-3 text-sm font-medium text-slate-900">最近运动</div>
-                <div className="space-y-3">
-                  {recentExercises.length === 0 ? (
-                    <EmptyInfo text="今天还没有运动记录，训练后饮食建议会优先按常规恢复策略回答。" />
-                  ) : (
-                    recentExercises.map((exercise) => (
-                      <div key={exercise.id} className="rounded-[22px] bg-slate-50/90 px-4 py-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">{exerciseTypeLabel(exercise.exercise_type)}</div>
-                            <div className="mt-1 text-xs text-slate-500">{exercise.duration_minutes} 分钟 · {Math.round(exercise.calories_burned_kcal)} kcal</div>
-                          </div>
-                          <div className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">训练</div>
-                        </div>
+              <div className="space-y-3">
+                {recentExercises.length === 0 ? (
+                  <EmptyPanel text="今天还没有运动记录。没有训练上下文时，训练后饮食建议会先按常规恢复策略来答。" />
+                ) : (
+                  recentExercises.map((exercise) => (
+                    <div key={exercise.id} className="soft-panel rounded-[22px] px-4 py-4">
+                      <div className="text-sm font-medium text-slate-900">{exerciseTypeLabel(exercise.exercise_type)}</div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        {exercise.duration_minutes} 分钟 · {Math.round(exercise.calories_burned_kcal)} kcal
                       </div>
-                    ))
-                  )}
-                </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mt-5 rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_16px_40px_rgba(148,163,184,0.14)] backdrop-blur md:p-6">
-        <div className="flex items-center justify-between gap-4">
+      <section className="glass-card mt-5 rounded-[30px] px-5 py-5">
+        <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Conversation</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">和 {coach.name} 一起判断下一步</h2>
+            <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Conversation</div>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">和 {coach.name} 一起继续执行</h2>
           </div>
-          <div className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">上下文已自动注入</div>
+          <div className="rounded-full bg-[#f4f3ff] px-3 py-1 text-xs text-slate-500">上下文已注入</div>
         </div>
 
         <div className="mt-5 space-y-4">
           {messages.map((msg, idx) => (
             <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               {msg.role === "assistant" ? (
-                <div className="max-w-[88%] rounded-[28px] rounded-bl-[12px] bg-slate-50/95 px-4 py-4 shadow-[0_10px_24px_rgba(148,163,184,0.14)] md:max-w-[78%]">
-                  <div className="mb-2 flex items-center gap-2">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br ${coach.gradientClass} text-xs font-semibold text-white`}>
-                      {coach.name.slice(0, 1)}
+                <div className="max-w-[92%] rounded-[28px] rounded-bl-[14px] bg-[#fbfaff] px-4 py-4 shadow-[0_12px_24px_rgba(149,145,201,0.08)]">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${coach.gradientClass} text-xs font-semibold text-white`}>
+                        {coach.name.slice(0, 1)}
+                      </div>
+                      <div className="text-xs font-medium text-slate-500">{coach.name}</div>
                     </div>
-                    <div className="text-xs font-medium text-slate-500">{coach.name}</div>
+                    <div className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${modeTone(msg.mode)}`}>{modeCopy(msg.mode)}</div>
                   </div>
+
                   <div className="whitespace-pre-wrap text-sm leading-7 text-slate-700">{msg.content}</div>
+
+                  {msg.requiresClarification && msg.missingFields && msg.missingFields.length > 0 && (
+                    <div className="mt-4 rounded-[20px] bg-[#fff3ea] px-3 py-3 text-xs leading-6 text-[#d96e49]">
+                      当前缺少：{msg.missingFields.join("、")}
+                    </div>
+                  )}
+
+                  {msg.plan && msg.plan.length > 0 && (
+                    <details className="mt-4 rounded-[22px] bg-white/80 px-4 py-3">
+                      <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-slate-900">
+                        <PanelTop className="h-4 w-4 text-[#6f63ff]" />
+                        查看 Agent 计划
+                      </summary>
+                      <div className="mt-3 space-y-2">
+                        {msg.plan.map((step) => (
+                          <div key={step.id} className="rounded-[18px] bg-[#f7f5ff] px-3 py-3">
+                            <div className="text-xs uppercase tracking-[0.16em] text-slate-400">{step.tool}</div>
+                            <div className="mt-1 text-sm text-slate-700">{step.purpose}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+
+                  {msg.executionTrace && msg.executionTrace.length > 0 && (
+                    <details className="mt-4 rounded-[22px] bg-white/80 px-4 py-3">
+                      <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-slate-900">
+                        <Compass className="h-4 w-4 text-[#6f63ff]" />
+                        查看执行过程
+                      </summary>
+                      <div className="mt-3 space-y-2">
+                        {msg.executionTrace.map((step) => (
+                          <div key={step.step_id} className="rounded-[18px] bg-[#f7f5ff] px-3 py-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="text-xs uppercase tracking-[0.16em] text-slate-400">{step.tool}</div>
+                              <div className={`rounded-full px-2 py-1 text-[10px] ${
+                                step.status === "completed" ? "bg-[#e9fbf7] text-[#2bbba5]" : "bg-[#fff1ef] text-[#ef6c5a]"
+                              }`}>
+                                {step.status}
+                              </div>
+                            </div>
+                            <div className="mt-1 text-sm text-slate-700">{step.summary}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
                 </div>
               ) : (
-                <div className="max-w-[82%] rounded-[28px] rounded-br-[12px] bg-slate-950 px-4 py-4 text-sm leading-7 text-white shadow-[0_12px_24px_rgba(15,23,42,0.18)] md:max-w-[72%]">
+                <div className="max-w-[80%] rounded-[28px] rounded-br-[14px] bg-[#1e1c2b] px-4 py-4 text-sm leading-7 text-white shadow-[0_14px_24px_rgba(30,28,43,0.18)]">
                   {msg.content}
                 </div>
               )}
@@ -420,14 +501,14 @@ export default function ChatPage() {
 
           {loading && (
             <div className="flex justify-start">
-              <div className="rounded-[28px] rounded-bl-[12px] bg-slate-50/95 px-4 py-4 shadow-[0_10px_24px_rgba(148,163,184,0.14)]">
+              <div className="rounded-[28px] rounded-bl-[14px] bg-[#fbfaff] px-4 py-4 shadow-[0_12px_24px_rgba(149,145,201,0.08)]">
                 <div className="mb-2 flex items-center gap-2">
                   <div className={`flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br ${coach.gradientClass} text-xs font-semibold text-white`}>
                     {coach.name.slice(0, 1)}
                   </div>
-                  <div className="text-xs font-medium text-slate-500">{coach.name} 正在思考</div>
+                  <div className="text-xs font-medium text-slate-500">{coach.name} 正在执行</div>
                 </div>
-                <div className="flex space-x-1 px-1">
+                <div className="flex gap-1">
                   <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: "0ms" }} />
                   <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: "150ms" }} />
                   <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: "300ms" }} />
@@ -439,31 +520,31 @@ export default function ChatPage() {
         </div>
       </section>
 
-      <section className="fixed bottom-20 left-1/2 z-40 w-full max-w-xl -translate-x-1/2 px-4 md:bottom-28">
-        <div className="rounded-[30px] border border-white/80 bg-white/92 p-3 shadow-[0_24px_40px_rgba(15,23,42,0.16)] backdrop-blur">
+      <section className="fixed bottom-20 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 px-4 md:bottom-24">
+        <div className="glass-card rounded-[30px] px-3 py-3">
           <div className="mb-3 flex items-center justify-between px-2">
             <div>
-              <div className="text-sm font-medium text-slate-900">继续对话</div>
-              <div className="text-xs text-slate-500">直接描述你的问题，或先点上方任务卡</div>
+              <div className="text-sm font-medium text-slate-900">继续发起任务</div>
+              <div className="text-xs text-slate-500">可以直接提问，也可以描述一个复合任务让我拆解执行。</div>
             </div>
-            <div className={`rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium ${coach.accentClass}`}>{coach.name} 在线</div>
+            <div className="rounded-full bg-[#f4f3ff] px-3 py-1.5 text-xs font-medium text-slate-500">{coach.name} 在线</div>
           </div>
-          <div className="flex gap-2 rounded-[22px] bg-slate-50 px-3 py-3">
+
+          <div className="flex gap-2 rounded-[24px] bg-white/72 px-3 py-3">
             <input
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
-              placeholder={`问问 ${coach.name}，例如：今晚还能怎么吃？`}
+              className="flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+              placeholder={`例如：今天还能吃什么，或者描述一条复合任务`}
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => event.key === "Enter" && handleSend()}
             />
             <button
+              type="button"
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.2)] disabled:opacity-40"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,#7b6cff,#9b7bff)] text-white disabled:opacity-40"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
+              <SendHorizonal className="h-4 w-4" />
             </button>
           </div>
         </div>

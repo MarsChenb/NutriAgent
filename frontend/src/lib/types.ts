@@ -90,6 +90,37 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+export interface AgentPlanStep {
+  id: string;
+  tool: string;
+  purpose: string;
+  status: string;
+}
+
+export interface AgentTraceStep {
+  step_id: string;
+  tool: string;
+  purpose: string;
+  status: string;
+  summary: string;
+}
+
+export interface ChatApiResponse {
+  response: string;
+  intent?: string | null;
+  mode?: string | null;
+  plan?: AgentPlanStep[] | null;
+  execution_trace?: AgentTraceStep[] | null;
+  context_snapshot?: {
+    calorie_remaining?: number;
+    calorie_deficit?: number;
+  } | null;
+  requires_clarification?: boolean;
+  clarification_question?: string | null;
+  missing_fields?: string[] | null;
+  resumed_from_clarification?: boolean;
+}
+
 export interface UserProfile {
   user_id: number;
   coach_persona: string | null;
