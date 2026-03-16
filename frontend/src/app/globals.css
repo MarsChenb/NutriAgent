@@ -1,19 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --background: #eef4f6;
-  --foreground: #0f172a;
-  --surface: rgba(255, 255, 255, 0.86);
-  --surface-strong: rgba(255, 255, 255, 0.94);
-  --stroke: rgba(255, 255, 255, 0.62);
-  --shadow-soft: 0 22px 60px rgba(15, 23, 42, 0.1);
-  --shadow-card: 0 16px 32px rgba(148, 163, 184, 0.16);
+  --background: #f4f3ff;
+  --background-soft: #fbfaff;
+  --foreground: #16161d;
+  --muted: #6f7285;
+  --card: rgba(255, 255, 255, 0.9);
+  --card-strong: rgba(255, 255, 255, 0.96);
+  --card-stroke: rgba(233, 230, 255, 0.92);
+  --accent: #6f63ff;
+  --accent-soft: #ece9ff;
+  --mint: #3fd4c1;
+  --peach: #ff8b6a;
+  --sky: #7fa8ff;
+  --shadow-page: 0 32px 90px rgba(89, 77, 179, 0.14);
+  --shadow-card: 0 18px 40px rgba(149, 145, 201, 0.12);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-sans: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
   --font-mono: "Cascadia Code", "SFMono-Regular", monospace;
 }
 
@@ -22,6 +29,7 @@
 }
 
 html {
+  min-height: 100%;
   background: var(--background);
   scroll-behavior: smooth;
 }
@@ -29,12 +37,12 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(181, 234, 215, 0.45), transparent 24%),
-    radial-gradient(circle at top right, rgba(198, 221, 255, 0.52), transparent 26%),
-    linear-gradient(180deg, #eef4f6 0%, #f7f8fb 45%, #eef2f5 100%);
   color: var(--foreground);
   font-family: var(--font-sans);
+  background:
+    radial-gradient(circle at top left, rgba(177, 170, 255, 0.28), transparent 26%),
+    radial-gradient(circle at top right, rgba(141, 232, 219, 0.22), transparent 24%),
+    linear-gradient(180deg, #f4f3ff 0%, #f8f7ff 28%, #f6fbff 100%);
 }
 
 button,
@@ -44,7 +52,51 @@ select {
   font: inherit;
 }
 
-::selection {
-  background: rgba(15, 23, 42, 0.12);
+button {
+  cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: rgba(111, 99, 255, 0.18);
+}
+
+.app-shell {
+  position: relative;
+  margin: 0 auto;
+  min-height: 100vh;
+  max-width: 430px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(249, 248, 255, 0.95)),
+    var(--background-soft);
+}
+
+.glass-card {
+  border: 1px solid var(--card-stroke);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(20px);
+}
+
+.soft-panel {
+  border: 1px solid rgba(236, 233, 255, 0.84);
+  background: rgba(250, 249, 255, 0.88);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+@media (min-width: 768px) {
+  body {
+    padding: 20px 0;
+  }
+
+  .app-shell {
+    min-height: calc(100vh - 40px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 40px;
+    overflow: hidden;
+    box-shadow: var(--shadow-page);
+  }
+}

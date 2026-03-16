@@ -3,8 +3,8 @@ import "./globals.css";
 import BottomNav from "@/components/bottom-nav";
 
 export const metadata: Metadata = {
-  title: "NutriAgent - AI 健康教练",
-  description: "单用户 AI 健康教练 Web 应用，支持建档、餐食识别、运动记录、热量缺口分析与周度复盘。",
+  title: "NutriAgent - AI健康教练",
+  description: "面向减脂与健康管理场景的移动端优先 AI 健康教练 Web 应用。",
 };
 
 export default function RootLayout({
@@ -14,8 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className="min-h-screen text-slate-900 antialiased">
-        <div className="relative mx-auto min-h-screen max-w-6xl overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.92))] pb-20 shadow-[0_32px_120px_rgba(15,23,42,0.14)] backdrop-blur md:my-5 md:min-h-[calc(100vh-2.5rem)] md:rounded-[40px] md:border md:border-white/60">
+      <body className="text-slate-900 antialiased">
+        <div className="app-shell">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.86),transparent_70%)]" />
           {children}
           <BottomNav />
         </div>
@@ -23,4 +24,3 @@ export default function RootLayout({
     </html>
   );
 }
-
