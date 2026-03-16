@@ -78,9 +78,19 @@ export default function OnboardingPage() {
   const [bootstrapping, setBootstrapping] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [{ isEditMode, nextPath }] = useState(readEditorState);
+  const [editorState, setEditorState] = useState<{ isEditMode: boolean; nextPath: string } | null>(null);
+  const isEditMode = editorState?.isEditMode ?? false;
+  const nextPath = editorState?.nextPath ?? "/";
 
   useEffect(() => {
+    setEditorState(readEditorState());
+  }, []);
+
+  useEffect(() => {
+    if (!editorState) {
+      return;
+    }
+
     async function loadProfile() {
       try {
         const res = await api.get<UserProfile>("/users/me/profile");
@@ -110,7 +120,7 @@ export default function OnboardingPage() {
     }
 
     loadProfile();
-  }, [isEditMode, router]);
+  }, [editorState, isEditMode, router]);
 
   const selectedCoach = useMemo(() => getCoachPersona(form.coach_persona), [form.coach_persona]);
   const currentStep = steps[stepIndex];
@@ -244,7 +254,7 @@ export default function OnboardingPage() {
     }
   }
 
-  if (bootstrapping) {
+  if (bootstrapping || !editorState) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <div className="glass-card w-full rounded-[32px] px-6 py-8 text-center">
