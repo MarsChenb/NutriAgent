@@ -48,26 +48,26 @@ const quickTasks: QuickTask[] = [
   {
     id: "lookup-food",
     title: "查食物热量",
-    description: "直接查询食物参考热量和三大营养素。",
-    prompt: "帮我查香蕉的热量和三大营养素。",
+    description: "直接查询食物的参考热量和三大营养素。",
+    prompt: "帮我查一下香蕉的热量和三大营养素。",
   },
   {
     id: "recommend-meal",
-    title: "推荐一餐",
-    description: "结合我今天的预算推荐下一餐。",
+    title: "推荐下一餐",
+    description: "结合我今天的热量预算，推荐现在适合吃什么。",
     prompt: "结合我今天的热量预算，推荐一顿适合现在吃的减脂餐。",
   },
   {
     id: "post-workout",
     title: "训练后怎么吃",
-    description: "围绕恢复和减脂平衡给建议。",
+    description: "围绕恢复和减脂平衡给出建议。",
     prompt: "我刚训练完，接下来怎么吃更适合恢复又不影响减脂？",
   },
   {
     id: "complex-task",
     title: "复合任务示例",
-    description: "让 Agent 拆解并执行多步任务。",
-    prompt: "我晚餐吃了鸡胸肉和米饭，然后帮我看看今天还能吃什么并推荐晚餐。",
+    description: "让 Agent 先拆解，再一步步执行。",
+    prompt: "我晚餐吃了鸡胸肉和米饭，然后帮我看看今天还可以吃什么，并推荐一个低脂加餐。",
   },
 ];
 
@@ -192,7 +192,7 @@ export default function ChatPage() {
         setMessages([
           {
             role: "assistant",
-            content: `${coach.greeting}\n\n今天我已经拿到你的画像和预算信息了。你当前目标是 ${goalLabel(profileRes.data.goal_type)}，今天大约还剩 ${remaining} kcal 可安排。你可以直接问我，也可以点下面的任务卡让我开始执行。`,
+            content: `${coach.greeting}\n\n我已经拿到你今天的预算和最近记录了。你当前目标是 ${goalLabel(profileRes.data.goal_type)}，今天大约还剩 ${remaining} kcal 可以安排。你可以直接提问，也可以点下面的任务卡让我开始执行。`,
             timestamp: new Date(),
             mode: "direct",
           },
@@ -303,13 +303,11 @@ export default function ChatPage() {
           <div>
             <div className="text-xs uppercase tracking-[0.26em] text-white/75">Agent Studio</div>
             <h1 className="mt-3 text-[30px] font-semibold tracking-tight">{coach.name} AI 私教</h1>
-            <p className="mt-3 max-w-[250px] text-sm leading-7 text-white/88">{coach.tagline}。这不是普通聊天框，而是会拆任务、调工具、必要时追问的工作台。</p>
+            <p className="mt-3 max-w-[260px] text-sm leading-7 text-white/88">
+              {coach.tagline}。这不是普通聊天框，而是会拆任务、调工具、必要时追问你的工作台。
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="rounded-full bg-white/12 px-3 py-2 text-sm text-white/90"
-          >
+          <button type="button" onClick={() => router.push("/")} className="rounded-full bg-white/12 px-3 py-2 text-sm text-white/90">
             返回首页
           </button>
         </div>
@@ -380,7 +378,7 @@ export default function ChatPage() {
               </div>
               <div className="space-y-3">
                 {recentMeals.length === 0 ? (
-                  <EmptyPanel text="今天还没有餐食记录。你直接描述刚刚吃了什么，我可以边记录边给建议。" />
+                  <EmptyPanel text="今天还没有餐食记录。你可以直接描述刚刚吃了什么，我可以边记录边给建议。" />
                 ) : (
                   recentMeals.map((meal) => (
                     <div key={meal.id} className="soft-panel rounded-[22px] px-4 py-4">
@@ -401,7 +399,7 @@ export default function ChatPage() {
               </div>
               <div className="space-y-3">
                 {recentExercises.length === 0 ? (
-                  <EmptyPanel text="今天还没有运动记录。没有训练上下文时，训练后饮食建议会先按常规恢复策略来答。" />
+                  <EmptyPanel text="今天还没有运动记录。没有训练上下文时，训练后饮食建议会先按常规恢复策略来回答。" />
                 ) : (
                   recentExercises.map((exercise) => (
                     <div key={exercise.id} className="soft-panel rounded-[22px] px-4 py-4">
@@ -444,8 +442,14 @@ export default function ChatPage() {
 
                   <div className="whitespace-pre-wrap text-sm leading-7 text-slate-700">{msg.content}</div>
 
-                  {msg.requiresClarification && msg.missingFields && msg.missingFields.length > 0 && (
+                  {msg.requiresClarification && (
                     <div className="mt-4 rounded-[20px] bg-[#fff3ea] px-3 py-3 text-xs leading-6 text-[#d96e49]">
+                      {msg.clarificationQuestion || "继续补充一点信息，我才能把这步任务接着做下去。"}
+                    </div>
+                  )}
+
+                  {msg.missingFields && msg.missingFields.length > 0 && (
+                    <div className="mt-3 rounded-[20px] bg-[#fff8f3] px-3 py-3 text-xs leading-6 text-[#d96e49]">
                       当前缺少：{msg.missingFields.join("、")}
                     </div>
                   )}
@@ -478,9 +482,11 @@ export default function ChatPage() {
                           <div key={step.step_id} className="rounded-[18px] bg-[#f7f5ff] px-3 py-3">
                             <div className="flex items-center justify-between gap-3">
                               <div className="text-xs uppercase tracking-[0.16em] text-slate-400">{step.tool}</div>
-                              <div className={`rounded-full px-2 py-1 text-[10px] ${
-                                step.status === "completed" ? "bg-[#e9fbf7] text-[#2bbba5]" : "bg-[#fff1ef] text-[#ef6c5a]"
-                              }`}>
+                              <div
+                                className={`rounded-full px-2 py-1 text-[10px] ${
+                                  step.status === "completed" ? "bg-[#e9fbf7] text-[#2bbba5]" : "bg-[#fff1ef] text-[#ef6c5a]"
+                                }`}
+                              >
                                 {step.status}
                               </div>
                             </div>
@@ -516,6 +522,7 @@ export default function ChatPage() {
               </div>
             </div>
           )}
+
           <div ref={messagesEndRef} />
         </div>
       </section>
@@ -530,10 +537,29 @@ export default function ChatPage() {
             <div className="rounded-full bg-[#f4f3ff] px-3 py-1.5 text-xs font-medium text-slate-500">{coach.name} 在线</div>
           </div>
 
+          <div className="mb-3 flex flex-wrap gap-2 px-1">
+            <button type="button" onClick={() => handleSend("帮我查一下鸡胸肉的热量。")} className="rounded-full bg-[#f7f5ff] px-3 py-2 text-xs text-slate-600">
+              <Flame className="mr-1 inline h-3.5 w-3.5 text-[#ff8b6a]" />
+              查热量
+            </button>
+            <button type="button" onClick={() => handleSend("帮我推荐一个低脂晚餐。")} className="rounded-full bg-[#f7f5ff] px-3 py-2 text-xs text-slate-600">
+              <Target className="mr-1 inline h-3.5 w-3.5 text-[#6f63ff]" />
+              推荐晚餐
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSend("如果我今晚训练，训练后怎么吃更稳？")}
+              className="rounded-full bg-[#f7f5ff] px-3 py-2 text-xs text-slate-600"
+            >
+              <Sparkles className="mr-1 inline h-3.5 w-3.5 text-[#2bbba5]" />
+              训练后怎么吃
+            </button>
+          </div>
+
           <div className="flex gap-2 rounded-[24px] bg-white/72 px-3 py-3">
             <input
               className="flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
-              placeholder={`例如：今天还能吃什么，或者描述一条复合任务`}
+              placeholder="例如：今天还可以吃什么，或者描述一条复合任务"
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => event.key === "Enter" && handleSend()}

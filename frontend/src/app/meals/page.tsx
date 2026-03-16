@@ -1,17 +1,33 @@
-﻿"use client";
+"use client";
 
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
+import {
+  ArrowLeft,
+  Camera,
+  ChevronRight,
+  Flame,
+  ImagePlus,
+  PencilLine,
+  Salad,
+  Sparkles,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import type { MealParseResult, ParsedFood } from "@/lib/types";
 
 const mealTypes = [
-  { key: "breakfast", label: "早餐" },
-  { key: "lunch", label: "午餐" },
-  { key: "dinner", label: "晚餐" },
-  { key: "snack", label: "加餐" },
+  { key: "breakfast", label: "早餐", hint: "先把蛋白质和主食稳住，上午更不容易乱吃。" },
+  { key: "lunch", label: "午餐", hint: "中午吃得清晰，下午的状态会稳定很多。" },
+  { key: "dinner", label: "晚餐", hint: "控制晚间热量波动，是保住缺口的关键。" },
+  { key: "snack", label: "加餐", hint: "把小零食算进预算，才不会悄悄超标。" },
 ] as const;
+
+const textExamples = [
+  "晚餐吃了 150g 鸡胸肉、半碗米饭和一份生菜沙拉",
+  "早餐是两个鸡蛋、一杯无糖豆浆和两片全麦面包",
+  "下午加餐喝了酸奶，吃了一根香蕉和一小把坚果",
+];
 
 type InputMode = "text" | "image";
 
@@ -42,12 +58,13 @@ function readMealsParams(): PageParams {
   };
 }
 
-function NutritionPill({ label, value, unit }: { label: string; value: number; unit: string }) {
+function NutritionPill({ label, value, unit, tone }: { label: string; value: number; unit: string; tone: string }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-3">
-      <div className="text-xs text-slate-500">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-slate-950">
-        {value.toFixed(1)} {unit}
+    <div className="soft-panel rounded-[22px] px-4 py-4">
+      <div className="text-xs text-slate-400">{label}</div>
+      <div className={`mt-2 text-2xl font-semibold tracking-tight ${tone}`}>
+        {Math.round(value)}
+        <span className="ml-1 text-sm font-medium text-slate-400">{unit}</span>
       </div>
     </div>
   );
@@ -92,6 +109,7 @@ export default function MealsPage() {
   }, [previewUrl]);
 
   const canSave = useMemo(() => parsedItems.some((item) => item.food_id), [parsedItems]);
+  const activeMeal = mealTypes.find((item) => item.key === mealType) ?? mealTypes[1];
 
   function resetParsedState() {
     setParsedItems([]);
@@ -121,7 +139,7 @@ export default function MealsPage() {
       });
     } catch (parseError) {
       console.error(parseError);
-      setError("文本解析失败，请重试。");
+      setError("文字解析失败，请稍后重试。");
     } finally {
       setParsing(false);
     }
@@ -152,7 +170,7 @@ export default function MealsPage() {
       });
     } catch (parseError) {
       console.error(parseError);
-      setError("图片识别失败，请稍后再试。");
+      setError("图片识别失败，请换一张更清晰的照片再试。");
     } finally {
       setParsing(false);
     }
@@ -161,7 +179,7 @@ export default function MealsPage() {
   async function handleConfirm() {
     const validItems = parsedItems.filter((item) => item.food_id);
     if (validItems.length === 0) {
-      setError("没有可保存的食物项，请先完成识别。未匹配到食物库的项暂时不能保存。");
+      setError("还没有可保存的食物项，请先完成识别。未匹配到食物库的条目暂时不能保存。");
       return;
     }
 
@@ -176,7 +194,7 @@ export default function MealsPage() {
         raw_input: inputMode === "text" ? text : `image:${imageFile?.name || "upload"}`,
       });
       const totalCal = Math.round(res.data.total_calories_kcal || 0);
-      setResult(`记录成功，本餐合计 ${totalCal} kcal，AI 已生成点评。`);
+      setResult(`记录成功，这一餐约 ${totalCal} kcal，AI 点评也已经生成。`);
       setText("");
       setImageFile(null);
       if (previewUrl) {
@@ -206,65 +224,88 @@ export default function MealsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f7fbff_0%,#ffffff_40%)] p-4 pb-24">
-      <div className="rounded-[28px] border border-white/70 bg-white/92 p-5 shadow-sm">
+    <div className="px-4 pb-36 pt-5">
+      <section className="rounded-[34px] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(246,243,255,0.96))] px-5 py-6 shadow-[0_20px_40px_rgba(149,145,201,0.12)]">
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm text-slate-500">餐次记录</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">
-              {mealTypes.find((item) => item.key === mealType)?.label || "餐食"}
-            </h1>
-            <p className="mt-2 text-sm text-slate-500">记录日期：{mealDate}</p>
-          </div>
-          <button onClick={() => router.push(`/?date=${mealDate}`)} className="rounded-full border border-slate-200 px-3 py-2 text-xs text-slate-600">
-            返回首页
+          <button
+            type="button"
+            onClick={() => router.push(`/?date=${mealDate}`)}
+            className="glass-card flex h-11 w-11 items-center justify-center rounded-full text-slate-700"
+            aria-label="返回首页"
+          >
+            <ArrowLeft className="h-5 w-5" />
           </button>
+          <div className="flex gap-2">
+            <div className="rounded-full bg-[#f4f1ff] px-3 py-1.5 text-xs font-medium text-[#6f63ff]">
+              {inputMode === "text" ? "文字记录" : "图片识别"}
+            </div>
+            <div className="rounded-full bg-[#e9fbf7] px-3 py-1.5 text-xs font-medium text-[#2bbba5]">{activeMeal.label}</div>
+          </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-4 gap-2">
+        <div className="mt-5">
+          <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Meal Capture</div>
+          <h1 className="mt-3 text-[30px] font-semibold tracking-tight text-slate-950">记录这顿吃了什么</h1>
+          <p className="mt-3 text-sm leading-7 text-slate-500">{activeMeal.hint}</p>
+        </div>
+
+        <div className="mt-5 rounded-[24px] bg-white/78 px-4 py-4">
+          <div className="text-xs text-slate-400">记录日期</div>
+          <input
+            type="date"
+            value={mealDate}
+            onChange={(event) => setMealDate(event.target.value)}
+            className="mt-2 w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+          />
+        </div>
+      </section>
+
+      <section className="mt-5 overflow-x-auto pb-2">
+        <div className="flex min-w-max gap-3">
           {mealTypes.map(({ key, label }) => (
             <button
               key={key}
+              type="button"
               onClick={() => setMealType(key)}
-              className={`rounded-2xl px-3 py-3 text-sm font-medium transition ${mealType === key ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-600 hover:bg-slate-100"}`}
+              className={`rounded-[24px] px-5 py-3 text-sm font-medium transition ${
+                mealType === key ? "bg-[#1e1c2b] text-white shadow-[0_14px_24px_rgba(30,28,43,0.18)]" : "glass-card text-slate-600"
+              }`}
             >
               {label}
             </button>
           ))}
         </div>
+      </section>
 
-        <div className="mt-4 rounded-2xl bg-slate-50 p-4">
-          <label className="text-xs text-slate-500">记录日期</label>
-          <input
-            type="date"
-            value={mealDate}
-            onChange={(event) => setMealDate(event.target.value)}
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
-          />
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-[28px] border border-white/70 bg-white/92 p-5 shadow-sm">
-        <div className="flex rounded-2xl bg-slate-100 p-1">
+      <section className="glass-card mt-5 rounded-[30px] px-5 py-5">
+        <div className="flex rounded-[22px] bg-[#f5f3ff] p-1.5">
           <button
+            type="button"
             onClick={() => setInputMode("text")}
-            className={`flex-1 rounded-2xl px-4 py-2 text-sm font-medium transition ${inputMode === "text" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-[18px] px-4 py-3 text-sm font-medium transition ${
+              inputMode === "text" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"
+            }`}
           >
+            <PencilLine className="h-4 w-4" />
             文字记录
           </button>
           <button
+            type="button"
             onClick={() => setInputMode("image")}
-            className={`flex-1 rounded-2xl px-4 py-2 text-sm font-medium transition ${inputMode === "image" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-[18px] px-4 py-3 text-sm font-medium transition ${
+              inputMode === "image" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"
+            }`}
           >
+            <Camera className="h-4 w-4" />
             图片识别
           </button>
         </div>
 
         {inputMode === "text" ? (
-          <div className="mt-4">
-            <div className="mb-3 text-sm text-slate-500">用一句话描述你吃了什么，AI 会帮你拆成食物项、分量和营养值。</div>
+          <div className="mt-5">
+            <div className="mb-3 text-sm leading-6 text-slate-500">用一句话描述这顿吃了什么，系统会自动拆成食物项、克数和营养值。</div>
             <textarea
-              className="min-h-[120px] w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm outline-none placeholder:text-slate-400"
+              className="min-h-[150px] w-full resize-none rounded-[28px] border border-[#ebe7ff] bg-[#fbfaff] px-4 py-4 text-sm leading-7 text-slate-700 outline-none placeholder:text-slate-400"
               placeholder="例如：晚餐吃了 150g 鸡胸肉、半碗米饭和一份生菜沙拉"
               value={text}
               onChange={(event) => {
@@ -272,88 +313,146 @@ export default function MealsPage() {
                 setText(event.target.value);
               }}
             />
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={handleTextParse}
-                disabled={parsing || !text.trim()}
-                className="rounded-full bg-slate-950 px-6 py-2.5 text-sm font-medium text-white disabled:opacity-40"
-              >
-                {parsing ? "AI 解析中..." : "解析食物"}
-              </button>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {textExamples.map((example) => (
+                <button
+                  key={example}
+                  type="button"
+                  onClick={() => {
+                    setInputMode("text");
+                    setText(example);
+                  }}
+                  className="rounded-full bg-[#f5f3ff] px-3 py-2 text-xs text-slate-600"
+                >
+                  {example}
+                </button>
+              ))}
             </div>
           </div>
         ) : (
-          <div className="mt-4">
-            <div className="mb-3 text-sm text-slate-500">上传一张餐食图片，AI 会尝试识别食物项并估算克数与营养。</div>
-            <label className="flex min-h-[180px] cursor-pointer items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm text-slate-500">
+          <div className="mt-5">
+            <div className="mb-3 text-sm leading-6 text-slate-500">上传一张餐食照片，系统会尝试识别食物并估算克数和营养值。</div>
+            <label className="flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-[30px] border border-dashed border-[#ddd7ff] bg-[#fbfaff] px-4 py-6 text-center">
               <input type="file" accept="image/*" className="hidden" onChange={handleSelectImage} />
               {previewUrl ? (
-                <img src={previewUrl} alt="meal preview" className="max-h-[220px] rounded-2xl object-cover" />
+                <img src={previewUrl} alt="meal preview" className="max-h-[240px] rounded-[24px] object-cover" />
               ) : (
-                <span>点击上传餐食图片</span>
+                <>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f1edff] text-[#6f63ff]">
+                    <ImagePlus className="h-6 w-6" />
+                  </div>
+                  <div className="mt-4 text-base font-medium text-slate-900">点击上传餐食图片</div>
+                  <div className="mt-2 text-sm leading-6 text-slate-500">建议使用光线更均匀、食物主体更清晰的照片。</div>
+                </>
               )}
             </label>
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={handleImageParse}
-                disabled={parsing || !imageFile}
-                className="rounded-full bg-slate-950 px-6 py-2.5 text-sm font-medium text-white disabled:opacity-40"
-              >
-                {parsing ? "识别中..." : "识别图片"}
-              </button>
-            </div>
           </div>
         )}
-      </div>
+      </section>
 
       {(parsedItems.length > 0 || error || result) && (
-        <div className="mt-4 rounded-[28px] border border-white/70 bg-white/92 p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-950">识别与营养结果</h2>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">{inputMode === "text" ? "文本解析" : "图片识别"}</span>
+        <section className="glass-card mt-5 rounded-[30px] px-5 py-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Analysis</div>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">识别结果</h2>
+            </div>
+            <div className="rounded-full bg-[#f4f1ff] px-3 py-1.5 text-xs font-medium text-[#6f63ff]">
+              {inputMode === "text" ? "文本解析" : "图片识别"}
+            </div>
           </div>
 
-          {error && <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div>}
-          {result && <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{result}</div>}
+          {error && <div className="mt-4 rounded-[22px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-600">{error}</div>}
+          {result && <div className="mt-4 rounded-[22px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-700">{result}</div>}
 
           {parsedItems.length > 0 && (
             <>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <NutritionPill label="总热量" value={parseTotals.total_calories_kcal} unit="kcal" />
-                <NutritionPill label="蛋白质" value={parseTotals.total_protein_g} unit="g" />
-                <NutritionPill label="脂肪" value={parseTotals.total_fat_g} unit="g" />
-                <NutritionPill label="碳水" value={parseTotals.total_carb_g} unit="g" />
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <NutritionPill label="总热量" value={parseTotals.total_calories_kcal} unit="kcal" tone="text-[#2bbba5]" />
+                <NutritionPill label="蛋白质" value={parseTotals.total_protein_g} unit="g" tone="text-[#6f63ff]" />
+                <NutritionPill label="脂肪" value={parseTotals.total_fat_g} unit="g" tone="text-[#ff9b6a]" />
+                <NutritionPill label="碳水" value={parseTotals.total_carb_g} unit="g" tone="text-[#6a88ff]" />
               </div>
 
               <div className="mt-5 space-y-3">
                 {parsedItems.map((item, idx) => (
-                  <div key={`${item.food_name}-${idx}`} className="rounded-2xl bg-slate-50 p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <div className="text-sm font-medium text-slate-900">{item.food_name}</div>
-                        <div className="mt-1 text-xs text-slate-500">约 {item.amount_g} g {item.food_id ? "· 已匹配食物库" : "· 未匹配食物库"}</div>
+                  <div key={`${item.food_name}-${idx}`} className="soft-panel rounded-[24px] px-4 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-[#f4f1ff] text-[#6f63ff]">
+                          <Salad className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="text-base font-semibold text-slate-950">{item.food_name}</div>
+                          <div className="mt-1 text-xs text-slate-400">
+                            约 {item.amount_g} g {item.food_id ? "· 已匹配食物库" : "· 暂未匹配食物库"}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-right text-sm">
-                        <div className="font-semibold text-orange-500">{item.calories_kcal != null ? `${Math.round(item.calories_kcal)} kcal` : "--"}</div>
-                        <div className="mt-1 text-xs text-slate-500">P {item.protein_g ?? 0} / F {item.fat_g ?? 0} / C {item.carb_g ?? 0}</div>
+                      <div className="text-right">
+                        <div className="flex items-center justify-end gap-1 text-sm font-semibold text-[#ff8b6a]">
+                          <Flame className="h-4 w-4" />
+                          {item.calories_kcal != null ? `${Math.round(item.calories_kcal)} kcal` : "--"}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-400">P {item.protein_g ?? 0} / F {item.fat_g ?? 0} / C {item.carb_g ?? 0}</div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-
-              <div className="mt-5 flex justify-end">
-                <button
-                  onClick={handleConfirm}
-                  disabled={saving || !canSave}
-                  className="rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white disabled:opacity-40"
-                >
-                  {saving ? "保存中..." : "确认记录并生成点评"}
-                </button>
-              </div>
             </>
           )}
+        </section>
+      )}
+
+      <section className="fixed bottom-20 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 px-4 md:bottom-24">
+        <div className="glass-card rounded-[30px] px-3 py-3">
+          <div className="mb-3 flex items-center justify-between px-2">
+            <div>
+              <div className="text-sm font-medium text-slate-900">完成这次记录</div>
+              <div className="text-xs text-slate-500">
+                {parsedItems.length > 0 ? "确认后会回写首页预算，并生成这一餐的 AI 点评。" : "先解析，再确认保存。"}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push("/chat")}
+              className="flex items-center gap-1 rounded-full bg-[#f4f1ff] px-3 py-1.5 text-xs font-medium text-[#6f63ff]"
+            >
+              问 Agent
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={inputMode === "text" ? handleTextParse : handleImageParse}
+              disabled={parsing || (inputMode === "text" ? !text.trim() : !imageFile)}
+              className="rounded-[22px] bg-[#1e1c2b] px-4 py-3 text-sm font-medium text-white disabled:opacity-40"
+            >
+              {parsing ? "解析中..." : inputMode === "text" ? "解析这顿餐食" : "识别这张图片"}
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={saving || !canSave}
+              className="rounded-[22px] bg-[linear-gradient(135deg,#7b6cff,#9b7bff)] px-4 py-3 text-sm font-medium text-white disabled:opacity-40"
+            >
+              {saving ? "保存中..." : "确认记录并回首页"}
+            </button>
+          </div>
         </div>
+      </section>
+
+      {parsedItems.length === 0 && !error && !result && (
+        <section className="mt-5 rounded-[28px] bg-white/62 px-5 py-5 text-sm leading-7 text-slate-500 shadow-[0_14px_28px_rgba(149,145,201,0.08)]">
+          <div className="mb-3 flex items-center gap-2 text-slate-900">
+            <Sparkles className="h-4 w-4 text-[#6f63ff]" />
+            <span className="font-medium">记录建议</span>
+          </div>
+          食物名称越具体、份量越清晰，解析结果就越稳。如果你懒得细写，也可以先拍图，等识别后再决定要不要保存。
+        </section>
       )}
     </div>
   );
