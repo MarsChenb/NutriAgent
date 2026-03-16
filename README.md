@@ -36,41 +36,41 @@
   <tr>
     <td width="50%" align="center">
       <img src="docs/assets/onboarding-coach-selection.png" alt="教练选择与建档" width="90%" />
-      <p><strong>Profile &amp; Onboarding</strong></p>
+      <p><strong>教练选择与建档</strong></p>
     </td>
     <td width="50%" align="center">
       <img src="docs/assets/home-dashboard-summary.png" alt="首页核心指标" width="90%" />
-      <p><strong>Daily Hub</strong></p>
+      <p><strong>首页核心指标</strong></p>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
       <img src="docs/assets/home-meal-sections.png" alt="餐次组织与快速记录" width="90%" />
-      <p><strong>Meal Sections</strong></p>
+      <p><strong>餐次组织与快速记录</strong></p>
     </td>
     <td width="50%" align="center">
       <img src="docs/assets/meal-text-recording.png" alt="文本记餐" width="90%" />
-      <p><strong>Meal Capture</strong></p>
+      <p><strong>文本记餐与结构化解析</strong></p>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
       <img src="docs/assets/agent-studio-overview.png" alt="Agent Studio" width="90%" />
-      <p><strong>Agent Studio</strong></p>
+      <p><strong>Agent 工作台</strong></p>
     </td>
     <td width="50%" align="center">
       <img src="docs/assets/agent-context-panel.png" alt="Agent 上下文" width="90%" />
-      <p><strong>Context Injection</strong></p>
+      <p><strong>Agent 上下文注入</strong></p>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
       <img src="docs/assets/weekly-plan-overview.png" alt="周计划总览" width="90%" />
-      <p><strong>Weekly Plan</strong></p>
+      <p><strong>周计划总览</strong></p>
     </td>
     <td width="50%" align="center">
       <img src="docs/assets/weekly-review-summary.png" alt="周复盘总结" width="90%" />
-      <p><strong>Weekly Summary</strong></p>
+      <p><strong>AI 周总结</strong></p>
     </td>
   </tr>
 </table>
