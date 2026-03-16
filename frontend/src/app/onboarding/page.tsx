@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Activity,
-  ArrowLeft,
-  Heart,
-  Leaf,
-  MoonStar,
-  Sparkles,
-  SunMedium,
-  Target,
-} from "lucide-react";
+import { Activity, ArrowLeft, Heart, Leaf, MoonStar, Sparkles, SunMedium, Target } from "lucide-react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { coachPersonas, getCoachPersona } from "@/lib/coach-personas";
@@ -43,15 +34,15 @@ const initialForm: FormState = {
 };
 
 const steps = [
-  { key: "goal_type", title: "请先告诉我，你希望这次更接近什么目标？", note: "目标会影响热量预算、营养结构和节奏建议。" },
-  { key: "gender", title: "你的性别是？", note: "这一步只用来估算更稳的基础代谢和建议范围。" },
+  { key: "goal_type", title: "先告诉我，这次你最想接近什么目标？", note: "目标会影响热量预算、营养结构和建议节奏。" },
+  { key: "gender", title: "你的性别是？", note: "这一项只用于估算更稳的基础代谢和建议范围。" },
   { key: "age", title: "你现在几岁？", note: "年龄会影响恢复速度、训练安排和减脂节奏。" },
-  { key: "height_cm", title: "你的身高是多少？", note: "身高和体重一起才能算出更有参考意义的基础指标。" },
+  { key: "height_cm", title: "你的身高是多少？", note: "身高和体重一起，才能算出更有参考价值的基础指标。" },
   { key: "current_weight_kg", title: "你当前体重是多少？", note: "我会基于起点给你更现实的预算和建议。" },
   { key: "target_weight_kg", title: "你的目标体重是多少？", note: "目标不是越低越好，而是越能长期做到越好。" },
-  { key: "body_shape", title: "你的体型更接近哪一种？", note: "这能帮助我更贴近你的身体感受和减脂关注点。" },
-  { key: "activity_level", title: "你现在的运动习惯如何？", note: "计划一定要符合你的真实节奏，不然再漂亮都落不了地。" },
-  { key: "medical_history", title: "有没有需要特别注意的身体情况？", note: "有约束条件时，饮食和运动建议都必须更保守。" },
+  { key: "body_shape", title: "你的体型更接近哪一种？", note: "这能帮助我更贴近你的身体感受和关注重点。" },
+  { key: "activity_level", title: "你现在的运动习惯如何？", note: "计划一定要符合你的真实节奏，不然再漂亮也落不了地。" },
+  { key: "medical_history", title: "有没有需要特别注意的身体情况？", note: "有约束条件时，饮食和运动建议都要更保守。" },
 ] as const;
 
 function calcBmi(heightCm: string, weightKg: string) {
@@ -157,10 +148,10 @@ export default function OnboardingPage() {
             value={form.goal_type}
             onChange={(value) => updateField("goal_type", value)}
             options={[
-              { value: "fat_loss", title: "减脂塑形", description: "希望体脂和体重一起回到更轻松的区间", icon: Target },
-              { value: "health", title: "更健康", description: "想把饮食结构和作息慢慢调回正轨", icon: Heart },
-              { value: "energy", title: "更有活力", description: "希望状态更稳，不容易疲劳和暴食", icon: SunMedium },
-              { value: "detox", title: "饮食重置", description: "想先把节奏拉回来，建立更干净的习惯", icon: Leaf },
+              { value: "fat_loss", title: "减脂塑形", description: "希望体脂和体重一起回到更轻松的区间。", icon: Target },
+              { value: "health", title: "更健康", description: "想把饮食结构和作息慢慢调回正轨。", icon: Heart },
+              { value: "energy", title: "更有活力", description: "希望状态更稳，不容易疲劳和暴食。", icon: SunMedium },
+              { value: "detox", title: "饮食重置", description: "想先把节奏拉回来，建立更干净的习惯。", icon: Leaf },
             ]}
           />
         );
@@ -170,8 +161,8 @@ export default function OnboardingPage() {
             value={form.gender}
             onChange={(value) => updateField("gender", value)}
             options={[
-              { value: "female", title: "女生", description: "按女性代谢参数估算计划", icon: Sparkles },
-              { value: "male", title: "男生", description: "按男性代谢参数估算计划", icon: Activity },
+              { value: "female", title: "女生", description: "按女性代谢参数估算计划。", icon: Sparkles },
+              { value: "male", title: "男生", description: "按男性代谢参数估算计划。", icon: Activity },
             ]}
           />
         );
@@ -204,9 +195,9 @@ export default function OnboardingPage() {
             value={form.body_shape}
             onChange={(value) => updateField("body_shape", value)}
             options={[
-              { value: "apple", title: "苹果型", description: "腰腹更容易囤积脂肪", icon: Target },
-              { value: "pear", title: "梨型", description: "臀腿更容易堆积脂肪", icon: Heart },
-              { value: "balanced", title: "均衡型", description: "整体较均匀，执行节奏更关键", icon: Sparkles },
+              { value: "apple", title: "苹果型", description: "腰腹更容易囤积脂肪。", icon: Target },
+              { value: "pear", title: "梨型", description: "臀腿更容易堆积脂肪。", icon: Heart },
+              { value: "balanced", title: "均衡型", description: "整体较均匀，执行节奏更关键。", icon: Sparkles },
             ]}
           />
         );
@@ -216,10 +207,10 @@ export default function OnboardingPage() {
             value={form.activity_level}
             onChange={(value) => updateField("activity_level", value)}
             options={[
-              { value: "sedentary", title: "基本不运动", description: "久坐为主，很少主动训练", icon: MoonStar },
-              { value: "light", title: "轻度运动", description: "每周 1-3 天，偶尔散步或轻训练", icon: SunMedium },
-              { value: "moderate", title: "稳定训练", description: "每周 3-5 天，已经有基本节奏", icon: Activity },
-              { value: "high", title: "高频训练", description: "训练频繁，需要更细致的吃动平衡", icon: Sparkles },
+              { value: "sedentary", title: "基本不运动", description: "久坐为主，很少主动训练。", icon: MoonStar },
+              { value: "light", title: "轻度运动", description: "每周 1-3 天，偶尔散步或轻训练。", icon: SunMedium },
+              { value: "moderate", title: "稳定训练", description: "每周 3-5 天，已经有基本节奏。", icon: Activity },
+              { value: "high", title: "高频训练", description: "训练频繁，需要更细的吃动平衡。", icon: Sparkles },
             ]}
           />
         );
@@ -229,10 +220,10 @@ export default function OnboardingPage() {
             value={form.medical_history}
             onChange={(value) => updateField("medical_history", value)}
             options={[
-              { value: "none", title: "没有特别情况", description: "先按常规安全策略生成计划", icon: Heart },
-              { value: "diabetes", title: "血糖问题", description: "更关注碳水质量和波动控制", icon: Target },
-              { value: "thyroid", title: "甲状腺相关", description: "减脂节奏和饮食建议要更保守", icon: MoonStar },
-              { value: "cardio_or_joint", title: "心血管或关节问题", description: "运动强度和恢复安排需要限制", icon: Activity },
+              { value: "none", title: "没有特别情况", description: "先按常规安全策略生成计划。", icon: Heart },
+              { value: "diabetes", title: "血糖问题", description: "更关注碳水质量和波动控制。", icon: Target },
+              { value: "thyroid", title: "甲状腺相关", description: "减脂节奏和饮食建议要更保守。", icon: MoonStar },
+              { value: "cardio_or_joint", title: "心血管或关节问题", description: "运动强度和恢复安排需要限制。", icon: Activity },
             ]}
           />
         );
@@ -275,9 +266,7 @@ export default function OnboardingPage() {
             <div className="text-sm text-white/75">选择你的专属私教</div>
             <div className="mt-2 text-[32px] font-semibold tracking-tight">{selectedCoach.name}</div>
           </div>
-          <div className="rounded-full border border-white/30 px-3 py-1 text-xs tracking-[0.18em]">
-            {selectedCoach.mbti}
-          </div>
+          <div className="rounded-full border border-white/30 px-3 py-1 text-xs tracking-[0.18em]">{selectedCoach.mbti}</div>
         </div>
         <p className="mt-4 max-w-[260px] text-sm leading-7 text-white/88">{selectedCoach.greeting}</p>
       </section>

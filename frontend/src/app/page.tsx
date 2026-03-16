@@ -36,13 +36,13 @@ const mealMeta: Record<
 > = {
   breakfast: {
     title: "早餐",
-    hint: "把蛋白质和主食先稳住，上午更不容易乱吃。",
+    hint: "先把蛋白质和主食稳住，上午更不容易乱吃。",
     icon: Sunrise,
     tone: "bg-amber-50 text-amber-700",
   },
   lunch: {
     title: "午餐",
-    hint: "中午吃得清楚，下午的执行会轻松很多。",
+    hint: "中午吃得更清晰，下午的状态会稳定很多。",
     icon: Sun,
     tone: "bg-sky-50 text-sky-700",
   },
@@ -54,7 +54,7 @@ const mealMeta: Record<
   },
   snack: {
     title: "加餐",
-    hint: "小零食也要算进预算，才不会稀里糊涂超标。",
+    hint: "小零食也要算进预算，才不会悄悄超标。",
     icon: Sparkles,
     tone: "bg-emerald-50 text-emerald-700",
   },
@@ -117,13 +117,13 @@ function goalLabel(goalType: string | null) {
 
 function statusCopy(remainingCalories: number, calorieDeficit: number) {
   if (remainingCalories > 700) {
-    return "今天空间还很充足，下一餐优先排蛋白质和蔬菜。";
+    return "今天空间还比较充足，下一餐优先安排蛋白质和蔬菜。";
   }
   if (remainingCalories > 250) {
     return "今天节奏不错，接下来只要稳住分量就行。";
   }
   if (calorieDeficit < 0) {
-    return "今天已经超出预算，下一餐建议收一收油脂和主食。";
+    return "今天已经超出预算，下一餐建议收一收主食和油脂。";
   }
   return "今天差不多该收口了，后面优先高蛋白、低负担。";
 }
@@ -151,12 +151,8 @@ function formatMealNames(meal: MealLog) {
   return names.length > 0 ? names.join("、") : "未命名餐食";
 }
 
-function EmptyMealCard({ text }: { text: string }) {
-  return (
-    <div className="soft-panel rounded-[22px] px-4 py-4 text-sm leading-6 text-slate-500">
-      {text}
-    </div>
-  );
+function EmptyCard({ text }: { text: string }) {
+  return <div className="soft-panel rounded-[22px] px-4 py-4 text-sm leading-6 text-slate-500">{text}</div>;
 }
 
 function MacroProgress({
@@ -267,7 +263,7 @@ export default function DashboardPage() {
         <div className="glass-card w-full max-w-sm rounded-[32px] px-6 py-8 text-center">
           <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-[linear-gradient(135deg,#7b6cff,#9adfd7)]" />
           <h1 className="mt-5 text-2xl font-semibold text-slate-950">正在同步今天的健康状态</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">餐食、运动和目标数据正在加载中...</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">饮食、运动和目标数据正在加载中...</p>
         </div>
       </div>
     );
@@ -412,9 +408,7 @@ export default function DashboardPage() {
         <div className="soft-panel mt-4 rounded-[26px] px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium text-slate-700">今日营养进度</div>
-            <div className="rounded-full bg-[#ece9ff] px-3 py-1 text-xs font-medium text-[#6f63ff]">
-              缺口 {calorieDeficit} kcal
-            </div>
+            <div className="rounded-full bg-[#ece9ff] px-3 py-1 text-xs font-medium text-[#6f63ff]">缺口 {calorieDeficit} kcal</div>
           </div>
           <div className="mt-4 grid gap-3">
             <MacroProgress label="碳水" value={summary.total_carb_g || 0} target={profile.carb_target_g || 250} tone="bg-[#58d9c4]" />
@@ -475,7 +469,7 @@ export default function DashboardPage() {
 
               <div className="mt-4 space-y-3">
                 {sectionMeals.length === 0 ? (
-                  <EmptyMealCard text={`这餐还没有记录。补一条 ${config.title} 数据后，首页会立刻刷新今天的预算和建议。`} />
+                  <EmptyCard text={`这餐还没有记录。补一条 ${config.title} 数据后，首页会立刻刷新今天的预算和建议。`} />
                 ) : (
                   sectionMeals.slice(0, 2).map((meal) => (
                     <div key={meal.id} className="soft-panel rounded-[24px] px-4 py-4">
@@ -486,9 +480,7 @@ export default function DashboardPage() {
                             {format(new Date(meal.created_at), "HH:mm")} · {Math.round(meal.total_calories_kcal || 0)} kcal
                           </div>
                         </div>
-                        <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-500">
-                          {meal.items.length} 项
-                        </div>
+                        <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-500">{meal.items.length} 项</div>
                       </div>
                       {meal.ai_summary && <p className="mt-3 text-sm leading-6 text-slate-600">{meal.ai_summary}</p>}
                     </div>
@@ -521,7 +513,7 @@ export default function DashboardPage() {
 
           <div className="mt-4 space-y-3">
             {exercises.length === 0 ? (
-              <EmptyMealCard text="今天还没有运动记录。补一条训练数据后，Agent 的推荐会更贴合你当前状态。" />
+              <EmptyCard text="今天还没有运动记录。补一条训练数据后，Agent 的建议会更贴合你当前状态。" />
             ) : (
               exercises.slice(0, 2).map((exercise) => (
                 <div key={exercise.id} className="soft-panel rounded-[24px] px-4 py-4">

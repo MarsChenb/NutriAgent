@@ -64,10 +64,10 @@ const quickTasks: QuickTask[] = [
     prompt: "我刚训练完，接下来怎么吃更适合恢复又不影响减脂？",
   },
   {
-    id: "complex-task",
-    title: "复合任务示例",
-    description: "让 Agent 先拆解，再一步步执行。",
-    prompt: "我晚餐吃了鸡胸肉和米饭，然后帮我看看今天还可以吃什么，并推荐一个低脂加餐。",
+    id: "fixed-demo",
+    title: "固定 Demo 场景",
+    description: "展示记录餐食、分析预算和推荐加餐的完整 Agent 链路。",
+    prompt: "我刚记录了晚餐，吃了180g鸡胸肉、100g米饭和一份生菜。请先分析今天还剩多少热量，再推荐一个适合减脂的加餐。",
   },
 ];
 

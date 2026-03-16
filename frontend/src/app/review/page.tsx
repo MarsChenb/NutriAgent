@@ -2,16 +2,7 @@
 
 import { format, parseISO } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import {
-  ArrowLeft,
-  Bot,
-  ChevronRight,
-  Flame,
-  HeartPulse,
-  Sparkles,
-  Target,
-  TrendingDown,
-} from "lucide-react";
+import { ArrowLeft, Bot, ChevronRight, Flame, HeartPulse, Sparkles, Target, TrendingDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
@@ -125,11 +116,7 @@ export default function ReviewPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <button
-          type="button"
-          onClick={() => router.push("/chat")}
-          className="rounded-full bg-[#1e1c2b] px-4 py-2 text-sm text-white"
-        >
+        <button type="button" onClick={() => router.push("/chat")} className="rounded-full bg-[#1e1c2b] px-4 py-2 text-sm text-white">
           问 {coach.name}
         </button>
       </div>
@@ -143,8 +130,8 @@ export default function ReviewPage() {
           <div className="rounded-full border border-white/30 px-3 py-1 text-xs tracking-[0.18em]">7 DAYS</div>
         </div>
         <p className="mt-4 text-sm leading-7 text-white/88">
-          {format(parseISO(review.week_start), "M月d日", { locale: zhCN })} - {format(parseISO(review.week_end), "M月d日", { locale: zhCN })}
-          。这页用来把过去 7 天的吃、动、体重变化收束成一个可以复盘的结果页。
+          {format(parseISO(review.week_start), "M月d日", { locale: zhCN })} - {format(parseISO(review.week_end), "M月d日", { locale: zhCN })}。
+          这页用来把过去 7 天的吃、动、体重变化收束成一个可以复盘的结果页。
         </p>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
@@ -192,9 +179,7 @@ export default function ReviewPage() {
           </div>
           <div className={`rounded-full bg-white px-3 py-1 text-xs font-medium ${coach.accentClass}`}>{coach.name} 生成</div>
         </div>
-        <div className="mt-5 rounded-[26px] bg-[#fbfaff] px-5 py-5 text-sm leading-8 text-slate-700">
-          {review.weekly_summary_ai}
-        </div>
+        <div className="mt-5 rounded-[26px] bg-[#fbfaff] px-5 py-5 text-sm leading-8 text-slate-700">{review.weekly_summary_ai}</div>
 
         <button
           type="button"
