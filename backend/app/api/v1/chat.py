@@ -20,7 +20,15 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     intent: str | None = None
+    mode: str | None = None
+    plan: list[dict[str, Any]] | None = None
+    execution_trace: list[dict[str, Any]] | None = None
     context_snapshot: dict[str, Any] | None = None
+    requires_clarification: bool = False
+    clarification_question: str | None = None
+    missing_fields: list[str] | None = None
+    tool_catalog: list[dict[str, Any]] | None = None
+    resumed_from_clarification: bool = False
 
 
 @router.post("/", response_model=ChatResponse)
@@ -34,6 +42,7 @@ async def chat(
             user_input=data.message,
             user_id=user.id,
             db=db,
+            conversation_id=data.conversation_id,
         )
         return ChatResponse(**result)
     except Exception as exc:
