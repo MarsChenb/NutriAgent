@@ -32,28 +32,48 @@
 
 ## Screenshots
 
-### Profile & Onboarding
-
-![教练选择与建档](docs/assets/onboarding-coach-selection.png)
-
-### Daily Hub
-
-![首页核心指标](docs/assets/home-dashboard-summary.png)
-![餐次组织与快速记录](docs/assets/home-meal-sections.png)
-
-### Meal Capture
-
-![文本记餐](docs/assets/meal-text-recording.png)
-
-### Agent Studio
-
-![Agent Studio](docs/assets/agent-studio-overview.png)
-![Agent 上下文](docs/assets/agent-context-panel.png)
-
-### Weekly Review
-
-![周计划总览](docs/assets/weekly-plan-overview.png)
-![周复盘总结](docs/assets/weekly-review-summary.png)
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/assets/onboarding-coach-selection.png" alt="教练选择与建档" width="90%" />
+      <p><strong>Profile &amp; Onboarding</strong></p>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/assets/home-dashboard-summary.png" alt="首页核心指标" width="90%" />
+      <p><strong>Daily Hub</strong></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/assets/home-meal-sections.png" alt="餐次组织与快速记录" width="90%" />
+      <p><strong>Meal Sections</strong></p>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/assets/meal-text-recording.png" alt="文本记餐" width="90%" />
+      <p><strong>Meal Capture</strong></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/assets/agent-studio-overview.png" alt="Agent Studio" width="90%" />
+      <p><strong>Agent Studio</strong></p>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/assets/agent-context-panel.png" alt="Agent 上下文" width="90%" />
+      <p><strong>Context Injection</strong></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/assets/weekly-plan-overview.png" alt="周计划总览" width="90%" />
+      <p><strong>Weekly Plan</strong></p>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/assets/weekly-review-summary.png" alt="周复盘总结" width="90%" />
+      <p><strong>Weekly Summary</strong></p>
+    </td>
+  </tr>
+</table>
 
 ## 技术架构
 
