@@ -25,3 +25,7 @@ Thumbs.db
 # Docker volumes
 pgdata/
 redisdata/
+
+# Local markdown docs
+*.md
+!README.md

@@ -1,118 +1,113 @@
-# NutriAgent
+# AI 健康教练
 
-一个面向减脂与健康管理场景的移动端优先 AI Agent Web 应用。
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-App_Router-000000?logo=nextdotjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-336791?logo=postgresql&logoColor=white)
+![RAG](https://img.shields.io/badge/RAG-Lightweight-7C3AED)
+![Agent](https://img.shields.io/badge/Agent-Task--Oriented-111827)
 
-NutriAgent 不是通用聊天 Demo，也不是拼概念的“多 Agent 壳”。它围绕真实健康场景，把 `首次建档 -> 每日执行 -> Agent 私教 -> 周计划 / 周复盘` 做成了一个可完整演示的产品闭环。
-
-当前版本重点体现三件事：
-
-- 移动端优先的 AI 健康教练产品体验
-- 多模态记录、能量平衡计算与个性化建议
-- Router + Planner + Executor 驱动的任务型 Agent 工作流
-
-## 项目定位
-
-这个项目适合用于：
-
-- AI 应用开发岗位
-- Agent 开发 / LLM 应用工程岗位
-- 作品集展示、录屏演示、面试讲解
-
-它不追求商业化 SaaS 完整度，而是强调：
-
-- 有真实业务闭环
-- 有可讲清楚的 Agent 架构
-- 有能截图和演示的产品形态
-- 有前后端一体化落地能力
-
-## 当前主流程
+面向减脂与健康管理场景的任务型 AI 应用，支持建档、文本/图片餐食记录、运动记录、热量缺口计算、Agent 对话，以及周计划 / 周复盘。
 
 ```text
-选择教练
--> 9 步移动端建档
--> 今日健康工作台
--> 文本 / 图片记录餐食
--> 手动记录运动
--> Agent 私教拆解任务并执行
--> 查看周计划 / 周复盘
+建档 -> 每日记录 -> 预算分析 -> Agent 建议 -> 周度反馈
 ```
 
-## 核心能力
+## Overview
 
-### 1. 移动端建档与教练人格选择
+- 真实健康管理闭环，不是普通聊天 Demo
+- 支持任务型 Agent 执行，复杂请求可拆解为多步计划
+- 支持缺参澄清追问，降低关键字段缺失时的硬答风险
+- 基于 `pgvector` 实现轻量 RAG，并结合用户画像与最近行为数据增强建议相关性
 
-- 支持 3 位不同风格的 AI 教练
-- 分 9 步采集目标、性别、年龄、身高、体重、体型、运动习惯、健康史
-- 实时计算 BMI 与目标体重差值
-- 页面风格按移动端产品重做，适合录屏和截图
+## Highlights
 
-### 2. 今日健康工作台
+| 模块 | 能力 |
+|---|---|
+| Profile | 教练选择、目标建档、资料更新 |
+| Daily Hub | 摄入 / 消耗 / 缺口 / 营养进度 / 餐次组织 |
+| Meal Capture | 文本记餐、图片识别、结构化解析 |
+| Agent Studio | Router、Planner、Clarifier、Tool Execution |
+| Weekly Review | 7 日汇总、AI 总结、长期反馈 |
 
-- 按日期查看当天饮食与运动数据
-- 展示剩余热量、饮食摄入、运动消耗、热量缺口、三大营养素进度
-- 按早餐 / 午餐 / 晚餐 / 加餐 / 运动组织当天记录
-- 底部固定快速记录区，直接连接记餐、拍照和 Agent
+## Screenshots
 
-### 3. 多模态餐食记录
+### Profile & Onboarding
 
-- 支持自然语言解析餐食
-- 支持图片上传识别食物
-- 自动换算热量、蛋白质、脂肪、碳水
-- 保存后生成 AI 简评并回流首页展示
+![教练选择与建档](docs/assets/onboarding-coach-selection.png)
 
-### 4. 运动记录与能量平衡
+### Daily Hub
 
-- 支持手动记录运动类型、时长、消耗热量、备注
-- 自动更新每日热量缺口
-- 首页和周复盘会同步展示训练表现
+![首页核心指标](docs/assets/home-dashboard-summary.png)
+![餐次组织与快速记录](docs/assets/home-meal-sections.png)
 
-### 5. Agent 私教工具台
+### Meal Capture
 
-- 保留自由对话
-- 提供快捷任务入口
-- 对复杂任务进行拆解和执行
-- 在信息不足时主动澄清追问
-- 可折叠查看 plan 和 execution trace
+![文本记餐](docs/assets/meal-text-recording.png)
 
-### 6. 周计划 / 周复盘
+### Agent Studio
 
-- 展示最近 7 天饮食摄入、运动消耗、热量缺口、体重变化
-- 每日标记达标 / 未达标 / 数据不足
-- 顶部输出 AI 周总结
-- 支持直接跳转回 Agent 继续追问
+![Agent Studio](docs/assets/agent-studio-overview.png)
+![Agent 上下文](docs/assets/agent-context-panel.png)
 
-## Agent 架构
+### Weekly Review
 
-当前版本把 Agent 主流程收敛成下面这套结构：
+![周计划总览](docs/assets/weekly-plan-overview.png)
+![周复盘总结](docs/assets/weekly-review-summary.png)
+
+## 技术架构
+
+```text
+Frontend (Next.js)
+-> FastAPI API Layer
+-> Router / Planner / Clarifier / Tool Registry
+-> Meal / Exercise / Health / RAG Services
+-> PostgreSQL + pgvector
+```
+
+### 架构图
+
+```mermaid
+flowchart TD
+    A[Frontend / Mobile-first UI] --> B[FastAPI API Layer]
+    B --> C[User Profile]
+    B --> D[Meals & Exercises]
+    B --> E[Weekly Review]
+    B --> F[Agent Graph]
+
+    F --> F1[Router]
+    F --> F2[Planner]
+    F --> F3[Clarifier]
+    F --> F4[Tool Registry]
+    F4 --> T1[log_meal]
+    F4 --> T2[lookup_food]
+    F4 --> T3[answer_nutrition]
+    F4 --> T4[answer_knowledge]
+    F4 --> T5[recommend_recipe]
+
+    D --> G[(PostgreSQL)]
+    C --> G
+    E --> G
+    F --> H[Short-term Memory]
+    F --> I[Long-term Memory]
+    I --> G
+    F --> J[RAG Retriever]
+    J --> G2[(pgvector)]
+```
+
+### Agent 主链路
 
 ```text
 User Input
 -> Router
--> Direct Mode / Planned Mode / Clarification Mode
+-> Direct / Planned / Clarification
 -> Planner
 -> Tool Registry
 -> Executor
--> Summarized Response
--> Frontend shows response + plan + trace
+-> Response + Plan + Trace
 ```
 
-### 1. Router
-
-- 先判断用户请求属于哪类任务
-- 识别是单步任务还是复合任务
-
-### 2. Planner
-
-- 对复杂任务生成多步 plan
-- 每一步显式绑定一个 tool
-- 当前重点支持：
-  - 记录饮食并分析预算
-  - 结合训练推荐一餐
-  - 规划今天剩余饮食
-
-### 3. Tool Registry
-
-当前已包装的核心工具包括：
+### 当前已封装的核心工具
 
 - `log_meal`
 - `lookup_food`
@@ -121,35 +116,48 @@ User Input
 - `recommend_recipe`
 - `general_chat`
 
-### 4. Clarifier
+### Agent 工作流拆解
 
-- 当任务执行需要更多信息时，不直接瞎答
-- 返回结构化追问：
-  - `requires_clarification`
-  - `clarification_question`
-  - `missing_fields`
-- 前端会把这类状态渲染成明显的下一步动作
+#### 1. Router
 
-### 5. Execution Trace
+- 识别当前请求属于查热量、记餐、营养分析、知识问答还是推荐下一餐
+- 判断请求更适合单步执行还是进入复合任务链路
 
-每次 Agent 执行都能向前端返回：
+#### 2. Planner
 
-- `mode`
-- `plan`
-- `execution_trace`
+- 对包含“记录 + 分析”“结合训练 + 推荐一餐”等复合意图生成多步计划
+- 每一步显式绑定工具，保证执行路径可解释
 
-这让它不再只是“调个模型接口”，而是具备了可调试、可演示、可解释的 Agent 感。
+#### 3. Clarifier
 
-### 6. Memory
+- 在餐次、分量或训练上下文缺失时触发追问
+- 避免模型在关键字段不完整时硬答
 
-- 短期记忆：基于 `conversation_id` 保存最近会话，支持澄清追问后的续接
-- 长期记忆：把用户目标、口味偏好、过敏信息、饮食限制、健康史同步到 `long_term_memories`
-- 调用工具和生成建议时只注入精选记忆，而不是把所有历史全量塞给模型
+#### 4. Tool Execution
 
-### 7. Evaluation
+- 通过 Tool Registry 统一调度记餐、查热量、知识问答和推荐能力
+- 将业务能力从聊天入口中抽离，降低耦合
 
-- 提供离线可跑的最小评估，覆盖规则路由、计划模式、工具选择和澄清触发
-- 当前使用固定 case 做回归，适合在本地快速验证 Agent 骨架是否跑偏
+#### 5. Response + Trace
+
+- 返回最终回答的同时返回 `mode / plan / execution_trace`
+- 让前端可以展示 Agent 的执行过程，而不只是最终文本
+
+---
+
+## 核心功能模块
+
+| 功能模块 | 说明 | 技术实现 |
+|---|---|---|
+| 用户建档 | 采集目标、体重、活动水平、健康史和教练偏好 | `Next.js` 表单流 + `PUT /users/me/profile` |
+| 今日工作台 | 展示剩余热量、摄入、消耗、营养进度和餐次记录 | 日汇总计算 + 前端移动端工作台 |
+| 餐食记录 | 支持文本解析和图片识别，生成结构化餐食数据 | 文本解析 + Vision + 营养库映射 |
+| 运动记录 | 记录训练类型、时长和消耗热量，并影响缺口计算 | `FastAPI` + 日汇总更新 |
+| Agent 对话 | 处理查热量、记录餐食、推荐下一餐等任务 | `Router + Planner + Tool Registry + Clarifier` |
+| 营养知识问答 | 回答减脂、蛋白质、训练后饮食等知识问题 | 轻量 RAG + `pgvector` 检索 |
+| 周计划 / 周复盘 | 汇总最近 7 天执行结果并生成 AI 总结 | 周维度聚合 + LLM 总结 |
+
+---
 
 ## 技术栈
 
@@ -158,7 +166,6 @@ User Input
 - Next.js App Router
 - TypeScript
 - Tailwind CSS
-- 移动端优先 UI
 
 ### 后端
 
@@ -169,12 +176,14 @@ User Input
 
 ### AI / Agent
 
-- DeepSeek OpenAI 兼容接口
+- OpenAI-Compatible API
+- Prompt Engineering
 - Router + Planner + Executor
 - Tool Registry
 - Human-in-the-Loop Clarification
-- Context Engineering
 - 轻量 RAG
+
+---
 
 ## 项目结构
 
@@ -182,25 +191,27 @@ User Input
 NutriAgent/
 ├── backend/
 │   ├── app/
-│   │   ├── agents/             # Planner / Clarifier / Tool Registry / Graph
+│   │   ├── agents/             # Router / Planner / Clarifier / Tool Registry / Graph
 │   │   ├── api/v1/             # meals / exercises / health / chat / users
-│   │   ├── models/             # 用户、餐食、运动、体重、日汇总模型
-│   │   ├── schemas/            # 请求与响应模型
-│   │   ├── services/           # 餐食与日汇总等业务逻辑
+│   │   ├── models/             # 用户、餐食、运动、记忆等数据模型
+│   │   ├── services/           # 餐食、汇总等业务逻辑
 │   │   ├── rag/                # 知识导入与检索
 │   │   └── vision/             # 图片食物识别
-│   └── tests/                  # Agent planner / clarifier 基础测试
-└── frontend/
-    └── src/app/
-        ├── page.tsx            # 今日健康工作台
-        ├── onboarding/         # 教练选择 + 建档流程
-        ├── meals/              # 文本 / 图片餐食记录
-        ├── exercise/           # 手动运动记录
-        ├── chat/               # Agent Studio
-        └── review/             # 周计划 / 周复盘
+│   └── tests/                  # Agent 相关基础测试
+├── frontend/
+│   └── src/app/
+│       ├── page.tsx            # 今日健康工作台
+│       ├── onboarding/         # 教练选择 + 建档
+│       ├── meals/              # 餐食记录
+│       ├── exercise/           # 运动记录
+│       ├── chat/               # Agent 对话页
+│       └── review/             # 周计划 / 周复盘
+└── docs/assets/                # README 截图资源
 ```
 
-## 本地启动
+---
+
+## 快速启动
 
 ### 1. 启动基础服务
 
@@ -236,11 +247,13 @@ npm run dev
 
 访问 `http://localhost:3000`
 
+---
+
 ## 关键接口
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| `GET` | `/api/v1/users/me/profile` | 获取单用户画像 |
+| `GET` | `/api/v1/users/me/profile` | 获取用户画像 |
 | `PUT` | `/api/v1/users/me/profile` | 更新建档信息 |
 | `POST` | `/api/v1/meals/parse` | 文本餐食解析 |
 | `POST` | `/api/v1/meals/image` | 图片餐食识别 |
@@ -248,10 +261,12 @@ npm run dev
 | `GET` | `/api/v1/meals/daily-summary` | 获取每日营养与热量汇总 |
 | `POST` | `/api/v1/exercises/` | 保存运动记录 |
 | `GET` | `/api/v1/exercises/` | 获取某日运动记录 |
-| `POST` | `/api/v1/chat/` | Agent 私教统一入口 |
+| `POST` | `/api/v1/chat/` | Agent 统一入口 |
 | `GET` | `/api/v1/health/weekly-review` | 获取最近 7 天周复盘 |
 
-## 已完成的验证
+---
+
+## 已完成验证
 
 ### 后端
 
@@ -268,64 +283,22 @@ cd frontend
 npm run build
 ```
 
-## 推荐演示路径
+---
 
-如果你准备录屏或面试现场演示，建议按这个顺序：
+## 设计取舍
 
-1. 教练选择与移动端建档
-2. 今日健康工作台首页
-3. 文本或图片记录一餐
-4. 进入 Agent Studio 发起复合任务
-5. 展示 Agent 的 plan / execution trace
-6. 打开周计划 / 周复盘页收束结果
+### 1. 任务型 Agent 而不是完全自由聊天
 
-## 固定 Demo 场景
+健康管理的高频需求是记录、分析、推荐和复盘，任务边界相对明确。相比完全开放式聊天，任务型 Agent 更容易约束输入输出，也更适合和业务数据联动。
 
-推荐使用一条固定复合任务来做录屏和面试演示：
+### 2. 规则和结构化数据负责算
 
-1. 在首页展示今天的剩余热量和最近记录
-2. 到记餐页录入：`晚餐吃了 180g 鸡胸肉、100g 米饭和一份生菜`
-3. 进入聊天页发起固定任务：
-   `我刚记录了晚餐，吃了180g鸡胸肉、100g米饭和一份生菜。请先分析今天还剩多少热量，再推荐一个适合减脂的加餐。`
-4. 展示 `planned mode`、`plan`、`execution trace`
-5. 最后跳回周计划页，说明这不是一次性聊天，而是长期闭环
+热量、营养素、剩余预算和热量缺口等信息需要稳定、可验证，因此优先由结构化数据和规则计算，再交给模型负责解释和建议生成。
 
-详细脚本见 [DEMO_SCENARIO.md](/d:/NutriAgent/DEMO_SCENARIO.md)
+### 3. 轻量 RAG，而不是知识平台
 
-## 额外文档
+这个项目的主轴是健康场景 Agent，不是知识平台。RAG 只负责营养知识增强，不替代餐食记录、热量计算和用户状态等实时业务数据。
 
-- 固定演示脚本：[DEMO_SCENARIO.md](/d:/NutriAgent/DEMO_SCENARIO.md)
-- 技术白皮书骨架：[TECH_WHITEPAPER.md](/d:/NutriAgent/TECH_WHITEPAPER.md)
-- 简历项目表达：[RESUME_PROJECT.md](/d:/NutriAgent/RESUME_PROJECT.md)
+### 4. Clarification 先于硬答
 
-## 面试可讲的重点
-
-### 1. 为什么不是普通聊天应用
-
-因为健康管理场景不是泛问答，用户的真实需求是“记录、判断、推荐、复盘”这一整条任务链，所以我把聊天页设计成了 Agent Studio，而不是单纯聊天框。
-
-### 2. 为什么先做单用户模式
-
-为了先聚焦 AI 应用主线，把登录、多租户、权限和商业化逻辑从主路径上剥离，优先验证用户闭环和 Agent 交互。
-
-### 3. 为什么要有 Clarification
-
-很多健康类任务如果信息不足，直接回答很容易失真。比如记餐时缺餐次和分量、推荐训练后饮食时缺运动上下文，所以我加入了澄清追问而不是让模型硬猜。
-
-### 4. 为什么前端做成移动端优先
-
-健康管理本来就是高频、轻操作、日常记录型场景。移动端优先更符合真实使用方式，也更适合作品展示和演示录屏。
-
-### 5. 为什么要做最小评估
-
-如果没有评估，Agent 很容易停留在“看起来能用”。我加了离线可跑的最小评估，至少能验证路由、计划模式、工具选择和澄清触发是否跑偏。
-
-### 6. 当前仍有哪些不足
-
-- 现在还是单用户作品集版本，不是多租户 SaaS
-- 长期记忆是轻量实现，还没有更复杂的检索和生命周期管理
-- 评估体系适合本地回归，不等于线上真实流量下的完整效果评估
-
-## 简历一句话版本
-
-一个面向健康管理场景的移动端优先 AI Agent Web 应用，支持教练建档、多模态餐食记录、运动记录、热量缺口计算、任务型 Agent 对话与周计划 / 周复盘。
+在餐次、分量或运动上下文缺失时直接执行，容易让结果失真。先做缺参澄清，可以降低硬答风险，也让 Agent 更接近真实可用系统。
