@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Dumbbell,
   MoonStar,
+  Settings2,
   PencilLine,
   Sparkles,
   Sun,
@@ -315,6 +316,14 @@ export default function DashboardPage() {
             </div>
             <button
               type="button"
+              onClick={() => router.push(`/onboarding?mode=edit&next=${encodeURIComponent("/")}`)}
+              className="glass-card flex h-11 w-11 items-center justify-center rounded-full text-slate-700"
+              aria-label="编辑资料"
+            >
+              <Settings2 className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
               onClick={() => router.push("/chat")}
               className="glass-card flex h-11 w-11 items-center justify-center rounded-full text-slate-700"
               aria-label="进入 Agent"
@@ -336,6 +345,23 @@ export default function DashboardPage() {
             <div>
               <div className="text-xs text-slate-400">本周目标</div>
               <div className="mt-1 text-lg font-semibold text-slate-950">预计减重 {weeklyGoalKg.toFixed(2)} kg</div>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-slate-400" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => router.push(`/onboarding?mode=edit&next=${encodeURIComponent("/")}`)}
+          className="mt-4 flex w-full items-center justify-between rounded-[26px] bg-white/70 px-5 py-4 text-left shadow-[0_12px_26px_rgba(149,145,201,0.08)]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f1efff] text-[#6f63ff]">
+              <Settings2 className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-xs text-slate-400">个人资料与教练</div>
+              <div className="mt-1 text-lg font-semibold text-slate-950">随时调整目标、体重和私教类型</div>
             </div>
           </div>
           <ChevronRight className="h-5 w-5 text-slate-400" />

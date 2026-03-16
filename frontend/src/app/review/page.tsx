@@ -116,9 +116,18 @@ export default function ReviewPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <button type="button" onClick={() => router.push("/chat")} className="rounded-full bg-[#1e1c2b] px-4 py-2 text-sm text-white">
-          问 {coach.name}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => router.push(`/onboarding?mode=edit&next=${encodeURIComponent("/review")}`)}
+            className="rounded-full bg-white px-4 py-2 text-sm text-slate-700 shadow-[0_12px_24px_rgba(149,145,201,0.08)]"
+          >
+            改资料
+          </button>
+          <button type="button" onClick={() => router.push("/chat")} className="rounded-full bg-[#1e1c2b] px-4 py-2 text-sm text-white">
+            问 {coach.name}
+          </button>
+        </div>
       </div>
 
       <section className={`rounded-[34px] bg-gradient-to-br ${coach.gradientClass} px-5 py-6 text-white shadow-[0_24px_60px_rgba(111,99,255,0.22)]`}>

@@ -316,7 +316,11 @@ export default function ChatPage() {
           <button type="button" onClick={() => router.push("/review")} className="rounded-full bg-white/12 px-4 py-2 text-xs text-white/90">
             看周计划
           </button>
-          <button type="button" onClick={() => router.push("/onboarding")} className="rounded-full bg-white/12 px-4 py-2 text-xs text-white/90">
+          <button
+            type="button"
+            onClick={() => router.push(`/onboarding?mode=edit&next=${encodeURIComponent("/chat")}`)}
+            className="rounded-full bg-white/12 px-4 py-2 text-xs text-white/90"
+          >
             调整建档
           </button>
         </div>

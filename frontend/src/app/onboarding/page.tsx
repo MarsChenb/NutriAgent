@@ -60,6 +60,17 @@ function calcWeightDelta(currentWeightKg: string, targetWeightKg: string) {
   return Number((current - target).toFixed(1));
 }
 
+function readEditorState() {
+  if (typeof window === "undefined") {
+    return { isEditMode: false, nextPath: "/" };
+  }
+  const params = new URLSearchParams(window.location.search);
+  return {
+    isEditMode: params.get("mode") === "edit",
+    nextPath: params.get("next") || "/",
+  };
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(initialForm);
@@ -67,13 +78,14 @@ export default function OnboardingPage() {
   const [bootstrapping, setBootstrapping] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [{ isEditMode, nextPath }] = useState(readEditorState);
 
   useEffect(() => {
     async function loadProfile() {
       try {
         const res = await api.get<UserProfile>("/users/me/profile");
         const profile = res.data;
-        if (profile.onboarding_completed) {
+        if (profile.onboarding_completed && !isEditMode) {
           router.replace("/");
           return;
         }
@@ -98,7 +110,7 @@ export default function OnboardingPage() {
     }
 
     loadProfile();
-  }, [router]);
+  }, [isEditMode, router]);
 
   const selectedCoach = useMemo(() => getCoachPersona(form.coach_persona), [form.coach_persona]);
   const currentStep = steps[stepIndex];
@@ -131,10 +143,10 @@ export default function OnboardingPage() {
         medical_history: form.medical_history,
         onboarding_completed: true,
       });
-      router.replace("/");
+      router.replace(nextPath);
     } catch (saveError) {
       console.error(saveError);
-      setError("保存建档信息失败，请稍后重试。");
+      setError(isEditMode ? "更新资料失败，请稍后重试。" : "保存建档信息失败，请稍后重试。");
     } finally {
       setSaving(false);
     }
@@ -249,26 +261,28 @@ export default function OnboardingPage() {
       <div className="mb-5 flex items-center justify-between">
         <button
           type="button"
-          onClick={() => router.push("/")}
+          onClick={() => router.push(nextPath)}
           className="glass-card flex h-11 w-11 items-center justify-center rounded-full text-slate-700"
           aria-label="返回首页"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="text-sm font-medium text-slate-500">
-          {stepIndex + 1}/{steps.length}
+          {isEditMode ? `编辑资料 · ${stepIndex + 1}/${steps.length}` : `${stepIndex + 1}/${steps.length}`}
         </div>
       </div>
 
       <section className={`rounded-[34px] bg-gradient-to-br ${selectedCoach.gradientClass} px-5 py-6 text-white shadow-[0_24px_60px_rgba(111,99,255,0.22)]`}>
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm text-white/75">选择你的专属私教</div>
+            <div className="text-sm text-white/75">{isEditMode ? "更新你的专属私教与健康档案" : "选择你的专属私教"}</div>
             <div className="mt-2 text-[32px] font-semibold tracking-tight">{selectedCoach.name}</div>
           </div>
           <div className="rounded-full border border-white/30 px-3 py-1 text-xs tracking-[0.18em]">{selectedCoach.mbti}</div>
         </div>
-        <p className="mt-4 max-w-[260px] text-sm leading-7 text-white/88">{selectedCoach.greeting}</p>
+        <p className="mt-4 max-w-[280px] text-sm leading-7 text-white/88">
+          {isEditMode ? "这里可以重新调整教练类型、目标和身体资料。保存后，首页预算和 Agent 上下文会一起刷新。" : selectedCoach.greeting}
+        </p>
       </section>
 
       <div className="mt-5 grid grid-cols-3 gap-3">
@@ -337,7 +351,7 @@ export default function OnboardingPage() {
             disabled={saving || !canContinue()}
             className="flex-[1.4] rounded-full bg-[#1e1c2b] px-5 py-4 text-sm font-medium text-white disabled:opacity-40"
           >
-            {saving ? "正在生成你的建档结果..." : "完成建档"}
+            {saving ? (isEditMode ? "正在更新你的资料..." : "正在生成你的建档结果...") : isEditMode ? "保存资料" : "完成建档"}
           </button>
         )}
       </div>
